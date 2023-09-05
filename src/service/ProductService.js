@@ -11,6 +11,12 @@ export default class ProductService {
             .then((d) => d.data);
     }
 
+    getEmpleados() {
+        return fetch('demo/data/empleados.json')
+            .then((res) => res.json())
+            .then((d) => d.data);
+    }
+
     getProductsWithOrdersSmall() {
         return fetch('demo/data/products-orders-small.json')
             .then((res) => res.json())
