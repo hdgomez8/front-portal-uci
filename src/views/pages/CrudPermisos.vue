@@ -25,7 +25,7 @@ onBeforeMount(() => {
     initFilters();
 });
 onMounted(() => {
-    permissionsService.getEmpleados().then((data) => {
+    permissionsService.getPermisos().then((data) => {
         permissions.value = data;
         // Agrega un console.log para verificar la estructura de permissions.value
         console.log('Estructura de permissions.value:', permissions.value);
@@ -47,6 +47,9 @@ const openNew = () => {
 
     permission.value = {
         name: 'Hector Gomez',
+        cargo: 'Desarrollador',
+        area: 'TI',
+        jefeInmediato: 'Paula Londoño',
         fechaSolicitud: '20-08-2023',
         fechaPermiso: formattedDate,
         horaPermiso: '10:00',
@@ -205,12 +208,30 @@ const initFilters = () => {
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
                             <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editProduct(slotProps.data)" />
-                            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2" @click="confirmDeleteProduct(slotProps.data)" />
                         </template>
                     </Column>
                 </DataTable>
 
                 <Dialog v-model:visible="permissionDialog" :style="{ width: '950px' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
+                    <div class="formgrid grid">
+                        <div class="field col-3">
+                            <label for="nombreEmpleado">Nombre Empleado</label>
+                            <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="permission.name" readonly disabled />
+                        </div>
+                        <div class="field col-3">
+                            <label for="cargo">Cargo</label>
+                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.cargo" readonly disabled/>
+                        </div>
+                        <div class="field col-3">
+                            <label for="area">Area</label>
+                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.area" readonly disabled/>
+                        </div>
+                        <div class="field col-3">
+                            <label for="jefeInmediato">Jefe Inmediato</label>
+                            <InputText id="jefeInmediato" :showIcon="true" :showButtonBar="true" v-model="permission.jefeInmediato" readonly disabled/>
+                        </div>
+                    </div>
+
                     <div class="formgrid grid">
                         <div class="field col-3">
                             <label for="fechaSolicitud">Fecha Solicitud</label>
