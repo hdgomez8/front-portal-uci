@@ -1,100 +1,111 @@
 <script setup>
 import { FilterMatchMode } from 'primevue/api';
 import { ref, onMounted, onBeforeMount } from 'vue';
-import ProductService from '@/service/ProductService';
+import VacationsService from '@/service/VacationsService';
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
 
 const vacations = ref(null);
-const vacationDialog = ref(false);
-const deleteVacationDialog = ref(false);
-const deleteVacationsDialog = ref(false);
+const vacationsDialog = ref(false);
+const deletePermissionDialog = ref(false);
+const deletePermissionsDialog = ref(false);
 const calendarValueApplicationDate = ref(new Date());
-const calendarValueVacationDate = ref(null);
-const inputNumberVacationDuration = ref(null);
-const selectedTimeLeaveTime = ref(null);
+const calendarValuePermissionDate = ref(new Date());
 const vacation = ref({});
-const selectedVacations = ref(null);
+const selectedPermissions = ref(null);
 const dt = ref(null);
 const filters = ref({});
 const submitted = ref(false);
-const statuses = ref([
-    { label: 'APROBADA', value: 'aprobada' },
-    { label: 'PENDIENTE', value: 'pendiente' },
-    { label: 'RECHAZADA', value: 'rechazada' }
-]);
-const tiposDeVacaciones = ref([
-    { label: 'VACACIONES PAGADAS', value: 'vacaciones_pagadas' },
-    { label: 'VACACIONES SIN PAGO', value: 'vacaciones_sin_pago' },
-    { label: 'PERMISO CON SUELDO', value: 'permiso_con_sueldo' },
-    { label: 'PERMISO SIN SUELDO', value: 'permiso_sin_sueldo' },
-    { label: 'OTRO', value: 'otro' }
-]);
-const desdeCuando = ref(null); // Agregar referencia para "Desde cuando"
-const hastaCuando = ref(null); // Agregar referencia para "Hasta cuando"
-const duracionVacaciones = ref(0); // Variable para calcular la duración de las vacaciones
+const radioValue = ref(null);
+const tiposDePermisos = ref([{ value: 'CALAMIDAD DOMESTICA' }, { value: 'LICENCIA NO REMUNERADA' }, { value: 'LICENCIA REMUNERADA' }, { value: 'CONSULTA MEDICA' }, { value: 'ASUNTO PERSONAL' }, { value: 'ASUNTOS LABORALES' }]);
 
-const productService = new ProductService();
+const vacationsService = new VacationsService();
 
 onBeforeMount(() => {
     initFilters();
 });
 onMounted(() => {
-    productService.getEmpleados().then((data) => (vacations.value = data));
+    vacationsService.getVacations().then((data) => {
+        vacations.value = data;
+        // Agrega un console.log para verificar la estructura de vacations.value
+        console.log('Estructura de vacations.value:', vacations.value);
+    });
 });
 const onUpload = () => {
     toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
 };
-const formatCurrency = (value) => {
-    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-};
 
 const openNew = () => {
-    vacation.value = {};
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0'); // Obtiene el día y lo formatea a dos dígitos (por ejemplo, 08)
+    const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Obtiene el mes (se suma 1 ya que los meses en JavaScript comienzan en 0) y lo formatea a dos dígitos (por ejemplo, 08)
+    const year = today.getFullYear(); // Obtiene el año
+
+    // Obtener la fecha del calendario y formatearla
+    const selectedDate = calendarValuePermissionDate.value;
+    const formattedDate = selectedDate ? selectedDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' }) : null;
+
+    vacation.value = {
+        name: 'Hector Gomez',
+        cargo: 'Desarrollador',
+        area: 'TI',
+        jefeInmediato: 'Paula Londoño',
+        fechaSolicitud: '20-08-2023',
+        fechaPermiso: formattedDate,
+        horaPermiso: '10:00',
+        category: 'Accessories',
+        duracionPermiso: 2,
+        Status: 'PENDIENTE',
+        tipoPermiso: 'ASUNTO PERSONAL'
+    };
+    
     submitted.value = false;
-    vacation.fechaSolicitud = new Date();
-    vacationDialog.value = true;
+
+    // Construye la fecha en el formato deseado
+    vacation.value.fechaSolicitud = `${day}-${month}-${year}`;
+    vacationsDialog.value = true;
 };
 
 const hideDialog = () => {
-    vacationDialog.value = false;
+    vacationsDialog.value = false;
     submitted.value = false;
 };
 
-const saveVacation = () => {
+const saveProduct = () => {
+    console.log('Datos ingresados en el formulario:', vacation.value);
+
     submitted.value = true;
-    if (vacation.value.fechaSolicitud && vacation.value.fechaVacacion) {
+    if (vacation.value.fechaSolicitud && vacation.value.fechaPermiso) {
         if (vacation.value.id) {
-            vacation.value.inventoryStatus = vacation.value.inventoryStatus.value ? vacation.value.inventoryStatus.value : vacation.value.inventoryStatus;
+            console.log('aqui 1');
+            vacation.value.Status = vacation.value.Status.value ? vacation.value.Status.value : vacation.value.Status;
             vacation.value[findIndexById(vacation.value.id)] = vacation.value;
-            toast.add({ severity: 'success', summary: 'Successful', detail: 'Vacation Updated', life: 3000 });
+            toast.add({ severity: 'success', summary: 'Successful', detail: 'vacation Updated', life: 3000 });
         } else {
+            console.log('aqui 2');
             vacation.value.id = createId();
-            vacation.value.inventoryStatus = vacation.value.inventoryStatus ? vacation.value.inventoryStatus.value : 'PENDIENTE';
-            vacation.value.push(vacation.value);
-            toast.add({ severity: 'success', summary: 'Successful', detail: 'Vacation Created', life: 3000 });
+            console.log('Antes del push', vacations);
+            vacations.value.push({ ...vacation.value });
+            console.log('Despues del push', vacations);
+            toast.add({ severity: 'success', summary: 'Successful', detail: 'vacation Created', life: 3000 });
         }
-        vacationDialog.value = false;
+        vacationsDialog.value = false;
         vacation.value = {};
     }
 };
 
-const editVacation = (editVacation) => {
-    vacation.value = { ...editVacation };
-    vacationDialog.value = true;
+const editProduct = (editProduct) => {
+    vacation.value = { ...editProduct };
+    console.log(vacation);
+    vacationsDialog.value = true;
 };
 
-const confirmDeleteVacation = (editVacation) => {
-    vacation.value = editVacation;
-    deleteVacationDialog.value = true;
-};
-
-const deleteVacation = () => {
+const deleteProduct = () => {
     vacations.value = vacations.value.filter((val) => val.id !== vacation.value.id);
-    deleteVacationDialog.value = false;
+    deletePermissionDialog.value = false;
     vacation.value = {};
-    toast.add({ severity: 'success', summary: 'Successful', detail: 'Vacation Deleted', life: 3000 });
+    toast.add({ severity: 'success', summary: 'Successful', detail: 'vacation Deleted', life: 3000 });
 };
 
 const findIndexById = (id) => {
@@ -117,19 +128,11 @@ const createId = () => {
     return id;
 };
 
-const exportCSV = () => {
-    dt.value.exportCSV();
-};
-
-const confirmDeleteSelected = () => {
-    deleteVacationsDialog.value = true;
-};
-
-const deleteSelectedVacations = () => {
-    vacations.value = vacations.value.filter((val) => !selectedVacations.value.includes(val));
-    deleteVacationsDialog.value = false;
-    selectedVacations.value = null;
-    toast.add({ severity: 'success', summary: 'Successful', detail: 'Vacations Deleted', life: 3000 });
+const deleteSelectedProducts = () => {
+    vacations.value = vacations.value.filter((val) => !selectedPermissions.value.includes(val));
+    deletePermissionsDialog.value = false;
+    selectedPermissions.value = null;
+    toast.add({ severity: 'success', summary: 'Successful', detail: 'vacations Deleted', life: 3000 });
 };
 
 const initFilters = () => {
@@ -155,7 +158,7 @@ const initFilters = () => {
                 <DataTable
                     ref="dt"
                     :value="vacations"
-                    v-model:selection="selectedVacations"
+                    v-model:selection="selectedPermissions"
                     dataKey="id"
                     :paginator="true"
                     :rows="10"
@@ -175,7 +178,7 @@ const initFilters = () => {
                         </div>
                     </template>
 
-                    <Column field="code" header="Empleado" :sortable="true" headerStyle="width:14%; min-width:10rem;">
+                    <Column field="code" header="Empleado" :sortable="true" headerStyle="width:30%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Empleado</span>
                             {{ slotProps.data.name }}
@@ -187,65 +190,127 @@ const initFilters = () => {
                             {{ slotProps.data.fechaSolicitud }}
                         </template>
                     </Column>
-                    <Column field="category" header="Fecha Vacación" :sortable="true" headerStyle="width:14%; min-width:10rem;">
+                    <Column field="category" header="Fecha Permiso" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
-                            <span class="p-column-title">Fecha Vacación</span>
-                            {{ slotProps.data.fechaVacacion }}
+                            <span class="p-column-title">Fecha Permiso</span>
+                            <span>{{ slotProps.data.fechaPermiso }}</span>
                         </template>
                     </Column>
-                    <Column field="inventoryStatus" header="Tipo De Solicitud" :sortable="true" headerStyle="width:14%; min-width:10rem;">
+                    <Column field="Status" header="Estado De Solicitud" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
-                            <span class="p-column-title">Tipo De Solicitud</span>
-                            <span :class="'product-badge status-' + (slotProps.data.inventoryStatus ? slotProps.data.inventoryStatus.toLowerCase() : '')">{{ slotProps.data.inventoryStatus }}</span>
-                        </template>
-                    </Column>
-                    <Column field="code" header="Tipo De Permiso" :sortable="true" headerStyle="width:14%; min-width:10rem;">
-                        <template #body="slotProps">
-                            <span class="p-column-title">Tipo De Permiso</span>
-                            {{ slotProps.data.tipoPermiso }}
+                            <span class="p-column-title">Estado De Solicitud</span>
+                            <span :class="'vacation-badge status-' + (slotProps.data.Status ? slotProps.data.Status.toLowerCase() : '')">{{ slotProps.data.Status }}</span>
                         </template>
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editVacation(slotProps.data)" />
-                            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2" @click="confirmDeleteVacation(slotProps.data)" />
+                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editProduct(slotProps.data)" />
                         </template>
                     </Column>
                 </DataTable>
 
-                <Dialog v-model:visible="vacationDialog" :style="{ width: '850px' }" header="Solicitud De Vacaciones" :modal="true" class="p-fluid">
+                <Dialog v-model:visible="vacationsDialog" :style="{ width: '950px' }" header="Solicitud De Vacaciones" :modal="true" class="p-fluid">
                     <div class="formgrid grid">
                         <div class="field col-3">
-                            <label for="fechaSolicitud">Fecha Solicitud</label>
-                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" dateFormat="dd/mm/yy" readonly></Calendar>
+                            <label for="ciudadDepartamento">Ciudad/Departamento</label>
+                            <InputText id="ciudadDepartamento" :showIcon="true" :showButtonBar="true" v-model="vacation.ciudadDepartamento" readonly disabled />
                         </div>
                         <div class="field col-3">
-                            <label for="fechaVacacion">Fecha Vacación</label>
-                            <Calendar id="fechaVacacion" :showIcon="true" :showButtonBar="true" v-model="vacation.fechaVacacion"></Calendar>
+                            <label for="fechaSolicitud">Fecha Solicitud</label>
+                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" dateFormat="dd/mm/yy" readonly disabled></Calendar>
                         </div>
-                        <!-- Otras entradas para la solicitud de vacaciones -->
+                        <div class="field col-3">
+                            <label for="nombreEmpleado">Nombre Empleado</label>
+                            <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="vacation.name" readonly disabled />
+                        </div>
+                        <div class="field col-3">
+                            <label for="identificacionEmpleado">Identificación Empleado</label>
+                            <InputText id="identificacionEmpleado" :showIcon="true" :showButtonBar="true" v-model="vacation.identificacion" readonly disabled />
+                        </div>
                     </div>
 
-                    <div class="field">
-                        <label for="tipoVacacion" class="mb-3">Tipo De Vacación</label>
-                        <Dropdown id="tipoVacacion" v-model="vacation.tipoVacacion" :options="tiposDeVacaciones" optionLabel="label" placeholder="Selecciona Tipo De Vacación">
-                            <template #value="slotProps">
-                                <div v-if="slotProps.value && slotProps.value.value">
-                                    <span :class="'product-badge status-' + slotProps.value.value">{{ slotProps.value.label }}</span>
-                                </div>
-                                <div v-else-if="slotProps.value && !slotProps.value.value">
-                                    <span :class="'product-badge status-' + slotProps.value.toLowerCase()">{{ slotProps.value }}</span>
-                                </div>
-                                <span v-else>
-                                    {{ slotProps.placeholder }}
-                                </span>
-                            </template>
-                        </Dropdown>
+                    <div class="formgrid grid">
+                        <div class="field col-3">
+                            <label for="cargo">Cargo</label>
+                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="vacation.cargo" readonly disabled />
+                        </div>
+                        <div class="field col-3">
+                            <label for="area">Area</label>
+                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="vacation.area" readonly disabled />
+                        </div>
+                        <div class="field col-3">
+                            <label for="jefeInmediato">Jefe Inmediato</label>
+                            <InputText id="jefeInmediato" :showIcon="true" :showButtonBar="true" v-model="vacation.jefeInmediato" readonly disabled />
+                        </div>
                     </div>
-                    <!-- Otras entradas para la solicitud de vacaciones -->
+
+                    <div class="card p-fluid">
+                        <h5>Periodo De Vacaciones Cumplidas</h5>
+                        <div class="formgrid grid">
+                            <div class="field col">
+                                <label for="name2">Desde</label>
+                                <InputText id="name2" type="text" />
+                            </div>
+                            <div class="field col">
+                                <label for="email2">Hasta</label>
+                                <InputText id="email2" type="text" />
+                            </div>
+                            <div class="field col">
+                                <label for="email2">Dias Totales a los que tiene derecho</label>
+                                <InputText id="email2" type="text" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-fluid">
+                        <h5>Periodo en el cual disfrutara las vacaciones</h5>
+                        <div class="formgrid grid">
+                            <div class="field col">
+                                <label for="name2">Desde</label>
+                                <InputText id="name2" type="text" />
+                            </div>
+                            <div class="field col">
+                                <label for="email2">Hasta</label>
+                                <InputText id="email2" type="text" />
+                            </div>
+                            <div class="field col">
+                                <label for="email2">Dias Totales de disfrute</label>
+                                <InputText id="email2" type="text" />
+                            </div>
+                            <div class="field col">
+                                <label for="email2">Dias solicitados con pagos</label>
+                                <div class="field">
+                                    <div class="col-12 md:col-4">
+                                        <div class="field-radiobutton mb-0">
+                                            <RadioButton id="option1" name="option" value="Si" v-model="radioValue" />
+                                            <label for="option1">Si</label>
+                                        </div>
+                                        <div class="field" v-if="radioValue === 'Si'">
+                                            <div class="field">
+                                                <label for="numero">Dias:</label>
+                                                <input type="text" id="numero" v-model="numeroValue" class="small-input"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 md:col-4">
+                                        <div class="field-radiobutton mb-0">
+                                            <RadioButton id="option2" name="option" value="No" v-model="radioValue" />
+                                            <label for="option2">N/A</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <template #footer>
+                        <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
+                        <Button label="Solicitar" icon="pi pi-check" class="p-button-text" @click="saveProduct" />
+                    </template>
                 </Dialog>
 
-                <Dialog v-model:visible="deleteVacationDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                <Dialog v-model:visible="deletePermissionDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
                     <div class="flex align-items-center justify-content-center">
                         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
                         <span v-if="vacation"
@@ -254,19 +319,19 @@ const initFilters = () => {
                         >
                     </div>
                     <template #footer>
-                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteVacationDialog = false" />
-                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteVacation" />
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deletePermissionDialog = false" />
+                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteProduct" />
                     </template>
                 </Dialog>
 
-                <Dialog v-model:visible="deleteVacationsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                <Dialog v-model:visible="deletePermissionsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
                     <div class="flex align-items-center justify-content-center">
                         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
                         <span v-if="vacation">Are you sure you want to delete the selected vacations?</span>
                     </div>
                     <template #footer>
-                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteVacationsDialog = false" />
-                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteSelectedVacations" />
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deletePermissionsDialog = false" />
+                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteSelectedProducts" />
                     </template>
                 </Dialog>
             </div>

@@ -25,11 +25,9 @@ const statuses = ref([
     { label: 'RECHAZADA', value: 'rechazada' }
 ]);
 const tiposDeVacaciones = ref([
-    { label: 'VACACIONES PAGADAS', value: 'vacaciones_pagadas' },
-    { label: 'VACACIONES SIN PAGO', value: 'vacaciones_sin_pago' },
-    { label: 'PERMISO CON SUELDO', value: 'permiso_con_sueldo' },
-    { label: 'PERMISO SIN SUELDO', value: 'permiso_sin_sueldo' },
-    { label: 'OTRO', value: 'otro' }
+    { label: 'PORVENIR', value: 'porvenir' },
+    { label: 'PROTECCION', value: 'proteccion' },
+    { label: 'COLFONDOS', value: 'colfondos' }
 ]);
 const desdeCuando = ref(null); // Agregar referencia para "Desde cuando"
 const hastaCuando = ref(null); // Agregar referencia para "Hasta cuando"
@@ -213,22 +211,28 @@ const initFilters = () => {
                     </Column>
                 </DataTable>
 
-                <Dialog v-model:visible="vacationDialog" :style="{ width: '850px' }" header="Solicitud De Vacaciones" :modal="true" class="p-fluid">
+                <Dialog v-model:visible="vacationDialog" :style="{ width: '850px' }" header="Solicitud De Cesantias" :modal="true" class="p-fluid">
                     <div class="formgrid grid">
                         <div class="field col-3">
-                            <label for="fechaSolicitud">Fecha Solicitud</label>
-                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" dateFormat="dd/mm/yy" readonly></Calendar>
+                            <label for="ciudadDepartamento">Ciudad/Departamento</label>
+                            <InputText id="ciudadDepartamento" :showIcon="true" :showButtonBar="true" v-model="vacation.ciudadDepartamento" readonly disabled />
                         </div>
                         <div class="field col-3">
-                            <label for="fechaVacacion">Fecha Vacación</label>
-                            <Calendar id="fechaVacacion" :showIcon="true" :showButtonBar="true" v-model="vacation.fechaVacacion"></Calendar>
+                            <label for="fechaSolicitud">Fecha Solicitud</label>
+                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" dateFormat="dd/mm/yy" readonly disabled></Calendar>
                         </div>
-                        <!-- Otras entradas para la solicitud de vacaciones -->
+                        <div class="field col-3">
+                            <label for="nombreEmpleado">Nombre Empleado</label>
+                            <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="vacation.name" readonly disabled />
+                        </div>
+                        <div class="field col-3">
+                            <label for="identificacionEmpleado">Identificación Empleado</label>
+                            <InputText id="identificacionEmpleado" :showIcon="true" :showButtonBar="true" v-model="vacation.identificacion" readonly disabled />
+                        </div>
                     </div>
-
                     <div class="field">
-                        <label for="tipoVacacion" class="mb-3">Tipo De Vacación</label>
-                        <Dropdown id="tipoVacacion" v-model="vacation.tipoVacacion" :options="tiposDeVacaciones" optionLabel="label" placeholder="Selecciona Tipo De Vacación">
+                        <label for="tipoVacacion" class="mb-3">Fondo de Cesantias</label>
+                        <Dropdown id="tipoVacacion" v-model="vacation.tipoVacacion" :options="tiposDeVacaciones" optionLabel="label" placeholder="Selecciona Fondo de Cesantias">
                             <template #value="slotProps">
                                 <div v-if="slotProps.value && slotProps.value.value">
                                     <span :class="'product-badge status-' + slotProps.value.value">{{ slotProps.value.label }}</span>
@@ -242,6 +246,10 @@ const initFilters = () => {
                             </template>
                         </Dropdown>
                     </div>
+                    <template #footer>
+                        <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
+                        <Button label="Solicitar" icon="pi pi-check" class="p-button-text" @click="saveVacation" />
+                    </template>
                     <!-- Otras entradas para la solicitud de vacaciones -->
                 </Dialog>
 
