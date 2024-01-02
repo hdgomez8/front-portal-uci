@@ -1,11 +1,13 @@
 <script setup>
+//Importaciones
 import { FilterMatchMode } from 'primevue/api';
 import { ref, onMounted, onBeforeMount } from 'vue';
 import PermissionsService from '@/service/PermissionsService';
 import { useToast } from 'primevue/usetoast';
+import axios from 'axios';
 
+//Variables
 const toast = useToast();
-
 const permissions = ref(null);
 const permissionDialog = ref(false);
 const deletePermissionDialog = ref(false);
@@ -18,12 +20,16 @@ const dt = ref(null);
 const filters = ref({});
 const submitted = ref(false);
 const tiposDePermisos = ref([{ value: 'CALAMIDAD DOMESTICA' }, { value: 'LICENCIA NO REMUNERADA' }, { value: 'LICENCIA REMUNERADA' }, { value: 'CONSULTA MEDICA' }, { value: 'ASUNTO PERSONAL' }, { value: 'ASUNTOS LABORALES' }]);
-
+const uploadedFiles = ref([]);
 const permissionsService = new PermissionsService();
+const soportesPresentados = ref([]);
 
+//Ciclos De Vida
+/**/
 onBeforeMount(() => {
     initFilters();
 });
+/*llamar informacion del servicio-obtener permisos*/
 onMounted(() => {
     permissionsService.getPermisos().then((data) => {
         permissions.value = data;
@@ -31,7 +37,13 @@ onMounted(() => {
         console.log('Estructura de permissions.value:', permissions.value);
     });
 });
-const onUpload = () => {
+
+//Funciones
+const onUpload = (files) => {
+    // Agrega los archivos cargados al arreglo soportesPresentados
+    soportesPresentados.value = [...soportesPresentados.value, ...files];
+
+    // Puedes realizar cualquier otra lógica necesaria aquí
     toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
 };
 
@@ -56,7 +68,8 @@ const openNew = () => {
         category: 'Accessories',
         duracionPermiso: 2,
         Status: 'PENDIENTE',
-        tipoPermiso: 'ASUNTO PERSONAL'
+        tipoPermiso: 'ASUNTO PERSONAL',
+        soportesPresentados: [],
     };
     submitted.value = false;
 
@@ -70,7 +83,7 @@ const hideDialog = () => {
     submitted.value = false;
 };
 
-const saveProduct = () => {
+const savePermission = () => {
     console.log('Datos ingresados en el formulario:', permission.value);
 
     submitted.value = true;
@@ -88,19 +101,25 @@ const saveProduct = () => {
             console.log('Despues del push', permissions);
             toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Created', life: 3000 });
         }
+
+        // Agregar lógica para mostrar información de archivos adjuntos después de guardar.
+        if (permission.value.soportesPresentados && permission.value.soportesPresentados.length > 0) {
+            console.log('Archivos adjuntos guardados:', permission.value.soportesPresentados);
+            // Puedes mostrarlos de la manera que desees, tal vez en un toast o en otra parte de tu interfaz.
+        }
         permissionDialog.value = false;
         permission.value = {};
     }
 };
 
-const editProduct = (editProduct) => {
-    permission.value = { ...editProduct };
+const editPermission = (editPermission) => {
+    permission.value = { ...editPermission };
     console.log(permission);
     permissionDialog.value = true;
 };
 
-const confirmDeleteProduct = (editProduct) => {
-    permission.value = editProduct;
+const confirmDeleteProduct = (editPermission) => {
+    permission.value = editPermission;
     deletePermissionDialog.value = true;
 };
 
@@ -207,7 +226,13 @@ const initFilters = () => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editProduct(slotProps.data)" />
+                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editPermission(slotProps.data)" />
+                        </template>
+                    </Column>
+                    <Column headerStyle="min-width:10rem;">
+                        <template #body="slotProps">
+                            <Button icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" />
+                            <a href="crearPdf.php" target="_blank">Generar PDF</a>
                         </template>
                     </Column>
                 </DataTable>
@@ -220,15 +245,15 @@ const initFilters = () => {
                         </div>
                         <div class="field col-3">
                             <label for="cargo">Cargo</label>
-                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.cargo" readonly disabled/>
+                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.cargo" readonly disabled />
                         </div>
                         <div class="field col-3">
                             <label for="area">Area</label>
-                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.area" readonly disabled/>
+                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.area" readonly disabled />
                         </div>
                         <div class="field col-3">
                             <label for="jefeInmediato">Jefe Inmediato</label>
-                            <InputText id="jefeInmediato" :showIcon="true" :showButtonBar="true" v-model="permission.jefeInmediato" readonly disabled/>
+                            <InputText id="jefeInmediato" :showIcon="true" :showButtonBar="true" v-model="permission.jefeInmediato" readonly disabled />
                         </div>
                     </div>
 
@@ -260,6 +285,7 @@ const initFilters = () => {
                         <h5>Soportes Presentados</h5>
                         <FileUpload name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
                     </div>
+
                     <div class="field">
                         <label for="observaciones">Observaciones</label>
                         <Textarea id="observaciones" v-model="permission.observaciones" required="true" rows="3" cols="20" />
@@ -267,7 +293,7 @@ const initFilters = () => {
 
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
-                        <Button label="Solicitar" icon="pi pi-check" class="p-button-text" @click="saveProduct" />
+                        <Button label="Solicitar" icon="pi pi-check" class="p-button-text" @click="savePermission" />
                     </template>
                 </Dialog>
 
