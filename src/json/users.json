@@ -2,7 +2,8 @@
     "users": [
         {
             "username": "usuario@usuario.com",
-            "password": "654321"
+            "password": "654321",
+            "rol":"2"
         }
     ]
 }

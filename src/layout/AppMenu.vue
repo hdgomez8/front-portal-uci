@@ -16,6 +16,21 @@ const model = ref([
                 icon: 'pi pi-fw pi-pencil',
                 to: '/pages/crudPermisos'
             },
+            {
+                label: 'Vacaciones',
+                icon: 'pi pi-fw pi-car',
+                to: '/pages/crudVacaciones'
+            },
+            {
+                label: 'Turnos',
+                icon: 'pi pi-fw pi-users',
+                to: '/pages/crudTurnos'
+            },
+            {
+                label: 'Cesantias',
+                icon: 'pi pi-fw pi-money-bill',
+                to: '/pages/crudCesantias'
+            },
             { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/uikit/formlayout' },
             { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
             { label: 'Float Label', icon: 'pi pi-fw pi-bookmark', to: '/uikit/floatlabel' },
