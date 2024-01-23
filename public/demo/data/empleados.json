@@ -1,16 +1,14 @@
-
 {
     "data": [
-        {"id": "1000","name": "Bamboo Watch","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 65,"category": "Accessories","quantity": 24,"inventoryStatus": "INSTOCK","rating": 5},
-        {"id": "1001","name": "Black Watch","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 72,"category": "Accessories","quantity": 61,"inventoryStatus": "INSTOCK","rating": 4},
-        {"id": "1002","name": "Blue Band","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 79,"category": "Fitness","quantity": 2,"inventoryStatus": "LOWSTOCK","rating": 3},
-        {"id": "1003","name": "Blue T-Shirt","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 29,"category": "Clothing","quantity": 25,"inventoryStatus": "INSTOCK","rating": 5},
-        {"id": "1004","name": "Bracelet","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 15,"category": "Accessories","quantity": 73,"inventoryStatus": "INSTOCK","rating": 4},
-        {"id": "1005","name": "Brown Purse","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 120,"category": "Accessories","quantity": 0,"inventoryStatus": "OUTOFSTOCK","rating": 4},
-        {"id": "1006","name": "Chakra Bracelet","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 32,"category": "Accessories","quantity": 5,"inventoryStatus": "LOWSTOCK","rating": 3},
-        {"id": "1007","name": "Galaxy Earrings","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 34,"category": "Accessories","quantity": 23,"inventoryStatus": "INSTOCK","rating": 5},
-        {"id": "1008","name": "Game Controller","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 99,"category": "Electronics","quantity": 2,"inventoryStatus": "LOWSTOCK","rating": 4},
-        {"id": "1009","name": "Gaming Set","fechaSolicitud": "20-08-2023","fechaPermiso": "20-08-2023", "price": 299,"category": "Electronics","quantity": 63,"inventoryStatus": "INSTOCK","rating": 3}
+        { "id": "1000", "name": "Juan Perez", "fechaSolicitud": "20-08-2023", "fechaPermiso": "21-08-2023", "horaPermiso": 2, "duracionPermiso": 24, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1001", "name": "Maria Blanco", "fechaSolicitud": "21-08-2023", "fechaPermiso": "22-08-2023", "horaPermiso": 3, "duracionPermiso": 61, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1002", "name": "Luis Corzo", "fechaSolicitud": "20-08-2023", "fechaPermiso": "21-08-2023", "horaPermiso": 2, "duracionPermiso": 2, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1003", "name": "Pedro Santos", "fechaSolicitud": "23-08-2023", "fechaPermiso": "24-08-2023", "horaPermiso": 5, "duracionPermiso": 25, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1004", "name": "Brayan Perea", "fechaSolicitud": "20-08-2023", "fechaPermiso": "21-08-2023", "horaPermiso": 2, "duracionPermiso": 73, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1005", "name": "Mario Mora", "fechaSolicitud": "25-08-2023", "fechaPermiso": "26-08-2023", "horaPermiso": 4, "duracionPermiso": 0, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1006", "name": "Carlos Niño", "fechaSolicitud": "20-08-2023", "fechaPermiso": "21-08-2023", "horaPermiso": 2, "duracionPermiso": 5, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1007", "name": "Alfredo Ocampo", "fechaSolicitud": "29-08-2023", "fechaPermiso": "31-08-2023", "horaPermiso": 6, "duracionPermiso": 23, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1008", "name": "David Bravo", "fechaSolicitud": "20-08-2023", "fechaPermiso": "21-08-2023", "horaPermiso": 2, "duracionPermiso": 2, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" },
+        { "id": "1009", "name": "Milton Diaz", "fechaSolicitud": "27-08-2023", "fechaPermiso": "28-08-2023", "horaPermiso": 1, "duracionPermiso": 63, "Status": "PENDIENTE", "tipoPermiso": "ASUNTO PERSONAL" }
     ]
 }
-    

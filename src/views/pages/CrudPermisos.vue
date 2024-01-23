@@ -1,107 +1,139 @@
 <script setup>
+//Importaciones
 import { FilterMatchMode } from 'primevue/api';
 import { ref, onMounted, onBeforeMount } from 'vue';
-import ProductService from '@/service/ProductService';
+import PermissionsService from '@/service/PermissionsService';
 import { useToast } from 'primevue/usetoast';
+import axios from 'axios';
 
+//Variables
 const toast = useToast();
-
-const products = ref(null);
-const productDialog = ref(false);
-const deleteProductDialog = ref(false);
-const deleteProductsDialog = ref(false);
+const permissions = ref(null);
+const permissionDialog = ref(false);
+const deletePermissionDialog = ref(false);
+const deletePermissionsDialog = ref(false);
 const calendarValueApplicationDate = ref(new Date());
-const calendarValuePermissionDate = ref(null);
-const inputNumberPermitDuration = ref(null);
-const selectedTimeLeaveTime = ref(null);
-const product = ref({});
+const calendarValuePermissionDate = ref(new Date());
 const permission = ref({});
-const selectedProducts = ref(null);
+const selectedPermissions = ref(null);
 const dt = ref(null);
 const filters = ref({});
 const submitted = ref(false);
-const statuses = ref([
-    { label: 'INSTOCK', value: 'instock' },
-    { label: 'LOWSTOCK', value: 'lowstock' },
-    { label: 'OUTOFSTOCK', value: 'outofstock' }
-]);
-const tiposDePermisos = ref([
-    { label: 'CALAMIDAD DOMESTICA', value: 'CALAMIDAD DOMESTICA' },
-    { label: 'LICENCIA NO REMUNERADA', value: 'LICENCIA NO REMUNERADA' },
-    { label: 'LICENCIA REMUNERADA', value: 'LICENCIA REMUNERADA' },
-    { label: 'CONSULTA MEDICA', value: 'CONSULTA MEDICA' },
-    { label: 'ASUNTO PERSONAL', value: 'ASUNTO PERSONAL' },
-    { label: 'ASUNTOS LABORALES', value: 'ASUNTOS LABORALES' }
-]);
+const tiposDePermisos = ref([{ value: 'CALAMIDAD DOMESTICA' }, { value: 'LICENCIA NO REMUNERADA' }, { value: 'LICENCIA REMUNERADA' }, { value: 'CONSULTA MEDICA' }, { value: 'ASUNTO PERSONAL' }, { value: 'ASUNTOS LABORALES' }]);
+const uploadedFiles = ref([]);
+const permissionsService = new PermissionsService();
+const soportesPresentados = ref([]);
 
-const productService = new ProductService();
-
+//Ciclos De Vida
+/**/
 onBeforeMount(() => {
     initFilters();
 });
+/*llamar informacion del servicio-obtener permisos*/
 onMounted(() => {
-    productService.getEmpleados().then((data) => (products.value = data));
+    permissionsService.getPermisos().then((data) => {
+        permissions.value = data;
+        // Agrega un console.log para verificar la estructura de permissions.value
+        console.log('Estructura de permissions.value:', permissions.value);
+    });
 });
-const onUpload = () => {
+
+//Funciones
+const onUpload = (files) => {
+    // Agrega los archivos cargados al arreglo soportesPresentados
+    soportesPresentados.value = [...soportesPresentados.value, ...files];
+
+    // Puedes realizar cualquier otra lógica necesaria aquí
     toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
-};
-const formatCurrency = (value) => {
-    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
 const openNew = () => {
-    product.value = {};
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0'); // Obtiene el día y lo formatea a dos dígitos (por ejemplo, 08)
+    const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Obtiene el mes (se suma 1 ya que los meses en JavaScript comienzan en 0) y lo formatea a dos dígitos (por ejemplo, 08)
+    const year = today.getFullYear(); // Obtiene el año
+
+    // Obtener la fecha del calendario y formatearla
+    const selectedDate = calendarValuePermissionDate.value;
+    const formattedDate = selectedDate ? selectedDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' }) : null;
+
+    permission.value = {
+        name: 'Hector Gomez',
+        cargo: 'Desarrollador',
+        area: 'TI',
+        jefeInmediato: 'Paula Londoño',
+        fechaSolicitud: '20-08-2023',
+        fechaPermiso: formattedDate,
+        horaPermiso: '10:00',
+        category: 'Accessories',
+        duracionPermiso: 2,
+        Status: 'PENDIENTE',
+        tipoPermiso: 'ASUNTO PERSONAL',
+        soportesPresentados: [],
+    };
     submitted.value = false;
-    productDialog.value = true;
+
+    // Construye la fecha en el formato deseado
+    permission.value.fechaSolicitud = `${day}-${month}-${year}`;
+    permissionDialog.value = true;
 };
 
 const hideDialog = () => {
-    productDialog.value = false;
+    permissionDialog.value = false;
     submitted.value = false;
 };
 
-const saveProduct = () => {
+const savePermission = () => {
+    console.log('Datos ingresados en el formulario:', permission.value);
+
     submitted.value = true;
-    if (product.value.name && product.value.name.trim() && product.value.price) {
-        if (product.value.id) {
-            product.value.inventoryStatus = product.value.inventoryStatus.value ? product.value.inventoryStatus.value : product.value.inventoryStatus;
-            products.value[findIndexById(product.value.id)] = product.value;
-            toast.add({ severity: 'success', summary: 'Successful', detail: 'Product Updated', life: 3000 });
+    if (permission.value.fechaSolicitud && permission.value.fechaPermiso) {
+        if (permission.value.id) {
+            console.log('aqui 1');
+            permission.value.Status = permission.value.Status.value ? permission.value.Status.value : permission.value.Status;
+            permission.value[findIndexById(permission.value.id)] = permission.value;
+            toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Updated', life: 3000 });
         } else {
-            product.value.id = createId();
-            product.value.code = createId();
-            product.value.image = 'product-placeholder.svg';
-            product.value.inventoryStatus = product.value.inventoryStatus ? product.value.inventoryStatus.value : 'INSTOCK';
-            products.value.push(product.value);
-            toast.add({ severity: 'success', summary: 'Successful', detail: 'Product Created', life: 3000 });
+            console.log('aqui 2');
+            permission.value.id = createId();
+            console.log('Antes del push', permissions);
+            permissions.value.push({ ...permission.value });
+            console.log('Despues del push', permissions);
+            toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Created', life: 3000 });
         }
-        productDialog.value = false;
-        product.value = {};
+
+        // Agregar lógica para mostrar información de archivos adjuntos después de guardar.
+        if (permission.value.soportesPresentados && permission.value.soportesPresentados.length > 0) {
+            console.log('Archivos adjuntos guardados:', permission.value.soportesPresentados);
+            // Puedes mostrarlos de la manera que desees, tal vez en un toast o en otra parte de tu interfaz.
+        }
+        permissionDialog.value = false;
+        permission.value = {};
     }
 };
 
-const editProduct = (editProduct) => {
-    product.value = { ...editProduct };
-    console.log(product);
-    productDialog.value = true;
+const editPermission = (editPermission) => {
+    permission.value = { ...editPermission };
+    console.log(permission);
+    permissionDialog.value = true;
 };
 
-const confirmDeleteProduct = (editProduct) => {
-    product.value = editProduct;
-    deleteProductDialog.value = true;
+const confirmDeleteProduct = (editPermission) => {
+    permission.value = editPermission;
+    deletePermissionDialog.value = true;
 };
 
 const deleteProduct = () => {
-    products.value = products.value.filter((val) => val.id !== product.value.id);
-    deleteProductDialog.value = false;
-    product.value = {};
-    toast.add({ severity: 'success', summary: 'Successful', detail: 'Product Deleted', life: 3000 });
+    permissions.value = permissions.value.filter((val) => val.id !== permission.value.id);
+    deletePermissionDialog.value = false;
+    permission.value = {};
+    toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Deleted', life: 3000 });
 };
 
 const findIndexById = (id) => {
     let index = -1;
-    for (let i = 0; i < products.value.length; i++) {
-        if (products.value[i].id === id) {
+    for (let i = 0; i < permissions.value.length; i++) {
+        if (permissions.value[i].id === id) {
             index = i;
             break;
         }
@@ -118,19 +150,11 @@ const createId = () => {
     return id;
 };
 
-const exportCSV = () => {
-    dt.value.exportCSV();
-};
-
-const confirmDeleteSelected = () => {
-    deleteProductsDialog.value = true;
-};
-
 const deleteSelectedProducts = () => {
-    products.value = products.value.filter((val) => !selectedProducts.value.includes(val));
-    deleteProductsDialog.value = false;
-    selectedProducts.value = null;
-    toast.add({ severity: 'success', summary: 'Successful', detail: 'Products Deleted', life: 3000 });
+    permissions.value = permissions.value.filter((val) => !selectedPermissions.value.includes(val));
+    deletePermissionsDialog.value = false;
+    selectedPermissions.value = null;
+    toast.add({ severity: 'success', summary: 'Successful', detail: 'permissions Deleted', life: 3000 });
 };
 
 const initFilters = () => {
@@ -149,27 +173,21 @@ const initFilters = () => {
                     <template v-slot:start>
                         <div class="my-2">
                             <Button label="Solicitar Permiso" icon="pi pi-plus" class="p-button-success mr-2" @click="openNew" />
-                            <Button label="Delete" icon="pi pi-trash" class="p-button-danger" @click="confirmDeleteSelected" :disabled="!selectedProducts || !selectedProducts.length" />
                         </div>
-                    </template>
-
-                    <template v-slot:end>
-                        <FileUpload mode="basic" accept="image/*" :maxFileSize="1000000" label="Import" chooseLabel="Import" class="mr-2 inline-block" />
-                        <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />
                     </template>
                 </Toolbar>
 
                 <DataTable
                     ref="dt"
-                    :value="products"
-                    v-model:selection="selectedProducts"
+                    :value="permissions"
+                    v-model:selection="selectedPermissions"
                     dataKey="id"
                     :paginator="true"
                     :rows="10"
                     :filters="filters"
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                     :rowsPerPageOptions="[5, 10, 25]"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} permissions"
                     responsiveLayout="scroll"
                 >
                     <template #header>
@@ -182,7 +200,6 @@ const initFilters = () => {
                         </div>
                     </template>
 
-                    <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
                     <Column field="code" header="Empleado" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Empleado</span>
@@ -198,102 +215,109 @@ const initFilters = () => {
                     <Column field="category" header="Fecha Permiso" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Fecha Permiso</span>
-                            {{ slotProps.data.fechaPermiso }}
+                            <span>{{ slotProps.data.fechaPermiso }}</span>
                         </template>
                     </Column>
-                    <Column field="rating" header="Reviews" :sortable="true" headerStyle="width:14%; min-width:10rem;">
+                    <Column field="Status" header="Estado De Solicitud" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
-                            <span class="p-column-title">Rating</span>
-                            <Rating :modelValue="slotProps.data.rating" :readonly="true" :cancel="false" />
-                        </template>
-                    </Column>
-                    <Column field="inventoryStatus" header="Status" :sortable="true" headerStyle="width:14%; min-width:10rem;">
-                        <template #body="slotProps">
-                            <span class="p-column-title">Status</span>
-                            <span :class="'product-badge status-' + (slotProps.data.inventoryStatus ? slotProps.data.inventoryStatus.toLowerCase() : '')">{{ slotProps.data.inventoryStatus }}</span>
+                            <span class="p-column-title">Estado De Solicitud</span>
+                            <span :class="'permission-badge status-' + (slotProps.data.Status ? slotProps.data.Status.toLowerCase() : '')">{{ slotProps.data.Status }}</span>
                         </template>
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editProduct(slotProps.data)" />
-                            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2" @click="confirmDeleteProduct(slotProps.data)" />
+                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editPermission(slotProps.data)" />
+                        </template>
+                    </Column>
+                    <Column headerStyle="min-width:10rem;">
+                        <template #body="slotProps">
+                            <Button icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" />
+                            <a href="crearPdf.php" target="_blank">Generar PDF</a>
                         </template>
                     </Column>
                 </DataTable>
 
-                <Dialog v-model:visible="productDialog" :style="{ width: '850px' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
-                    <img :src="'demo/images/product/' + product.image" :alt="product.image" v-if="product.image" width="150" class="mt-0 mx-auto mb-5 block shadow-2" />
+                <Dialog v-model:visible="permissionDialog" :style="{ width: '950px' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
                     <div class="formgrid grid">
                         <div class="field col-3">
-                            <label for="name">Fecha Solicitud</label>
-                            <Calendar :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" readonly></Calendar>
+                            <label for="nombreEmpleado">Nombre Empleado</label>
+                            <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="permission.name" readonly disabled />
                         </div>
                         <div class="field col-3">
-                            <label for="name">Fecha Permiso</label>
-                            <Calendar :showIcon="true" :showButtonBar="true" v-model="calendarValuePermissionDate"></Calendar>
+                            <label for="cargo">Cargo</label>
+                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.cargo" readonly disabled />
                         </div>
                         <div class="field col-3">
-                            <label for="horaPermiso">Hora Del Permiso:</label>
-                            <InputText id="horaPermiso" v-model="selectedTimeLeaveTime" type="time" />
+                            <label for="area">Area</label>
+                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.area" readonly disabled />
                         </div>
                         <div class="field col-3">
-                            <label for="duracionPermiso">Duración Del Permiso:</label>
-                            <InputNumber id="duracionPermiso" v-model="inputNumberPermitDuration" showButtons :min="1" mode="decimal"></InputNumber>
+                            <label for="jefeInmediato">Jefe Inmediato</label>
+                            <InputText id="jefeInmediato" :showIcon="true" :showButtonBar="true" v-model="permission.jefeInmediato" readonly disabled />
+                        </div>
+                    </div>
+
+                    <div class="formgrid grid">
+                        <div class="field col-3">
+                            <label for="fechaSolicitud">Fecha Solicitud</label>
+                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" dateFormat="dd/mm/yy" readonly disabled></Calendar>
+                        </div>
+                        <div class="field col-3">
+                            <label for="fechaPermiso">Fecha Permiso</label>
+                            <Calendar id="fechaPermiso" :showIcon="true" :showButtonBar="true" v-model="calendarValuePermissionDate" dateFormat="dd/mm/yy"></Calendar>
+                        </div>
+                        <div class="field col-2">
+                            <label for="horaPermiso">Hora Permiso:</label>
+                            <InputText id="horaPermiso" v-model="permission.horaPermiso" type="time" />
+                        </div>
+                        <div class="field col-4">
+                            <label for="duracionPermiso">Duración Del Permiso(Horas):</label>
+                            <InputNumber id="duracionPermiso" v-model="permission.duracionPermiso" showButtons :min="1" mode="decimal"></InputNumber>
                         </div>
                     </div>
 
                     <div class="field">
                         <label for="tipoPermiso" class="mb-3">Tipo De Permiso</label>
-                        <Dropdown id="tipoPermiso" v-model="permission.permissionType" :options="tiposDePermisos" optionLabel="label" placeholder="Selecciona Tipo De Permiso">
-                            <template #value="slotProps">
-                                <div v-if="slotProps.value && slotProps.value.value">
-                                    <span :class="'product-badge status-' + slotProps.value.value">{{ slotProps.value.label }}</span>
-                                </div>
-                                <div v-else-if="slotProps.value && !slotProps.value.value">
-                                    <span :class="'product-badge status-' + slotProps.value.toLowerCase()">{{ slotProps.value }}</span>
-                                </div>
-                                <span v-else>
-                                    {{ slotProps.placeholder }}
-                                </span>
-                            </template>
-                        </Dropdown>
+                        <Dropdown id="tipoPermiso" v-model="permission.tipoPermiso" :options="tiposDePermisos" optionLabel="value" placeholder="Selecciona Tipo De Permiso"> </Dropdown>
                     </div>
+
                     <div class="field">
                         <h5>Soportes Presentados</h5>
                         <FileUpload name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
                     </div>
+
                     <div class="field">
                         <label for="observaciones">Observaciones</label>
-                        <Textarea id="observaciones" v-model="permission.observacion" required="true" rows="3" cols="20" />
+                        <Textarea id="observaciones" v-model="permission.observaciones" required="true" rows="3" cols="20" />
                     </div>
 
                     <template #footer>
-                        <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
-                        <Button label="Save" icon="pi pi-check" class="p-button-text" @click="saveProduct" />
+                        <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
+                        <Button label="Solicitar" icon="pi pi-check" class="p-button-text" @click="savePermission" />
                     </template>
                 </Dialog>
 
-                <Dialog v-model:visible="deleteProductDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                <Dialog v-model:visible="deletePermissionDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
                     <div class="flex align-items-center justify-content-center">
                         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-                        <span v-if="product"
-                            >Are you sure you want to delete <b>{{ product.name }}</b
+                        <span v-if="permission"
+                            >Are you sure you want to delete <b>{{ permission.name }}</b
                             >?</span
                         >
                     </div>
                     <template #footer>
-                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductDialog = false" />
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deletePermissionDialog = false" />
                         <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteProduct" />
                     </template>
                 </Dialog>
 
-                <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                <Dialog v-model:visible="deletePermissionsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
                     <div class="flex align-items-center justify-content-center">
                         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-                        <span v-if="product">Are you sure you want to delete the selected products?</span>
+                        <span v-if="permission">Are you sure you want to delete the selected permissions?</span>
                     </div>
                     <template #footer>
-                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteProductsDialog = false" />
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deletePermissionsDialog = false" />
                         <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteSelectedProducts" />
                     </template>
                 </Dialog>

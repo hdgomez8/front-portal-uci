@@ -147,6 +147,21 @@ const router = createRouter({
                     component: () => import('@/views/pages/CrudPermisos.vue')
                 },
                 {
+                    path: '/pages/crudVacaciones',
+                    name: 'crudVacaciones',
+                    component: () => import('@/views/pages/CrudVacaciones.vue')
+                },
+                {
+                    path: '/pages/crudTurnos',
+                    name: 'crudTurnos',
+                    component: () => import('@/views/pages/CrudTurnos.vue')
+                },
+                {
+                    path: '/pages/crudCesantias',
+                    name: 'crudCesantias',
+                    component: () => import('@/views/pages/CrudCesantias.vue')
+                },
+                {
                     path: '/documentation',
                     name: 'documentation',
                     component: () => import('@/views/utilities/Documentation.vue')
