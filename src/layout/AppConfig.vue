@@ -6,6 +6,9 @@ import Sidebar from 'primevue/sidebar';
 
 import { ref } from 'vue';
 import { useLayout } from '@/layout/composables/layout';
+import { useStore } from '@/store';
+
+const store = useStore();
 
 defineProps({
     simple: {
@@ -49,7 +52,7 @@ const applyScale = () => {
 </script>
 
 <template>
-    <button class="layout-config-button p-link" type="button" @click="onConfigButtonClick()">
+    <button v-if="!store.isAuthenticated" class="layout-config-button p-link" type="button" @click="onConfigButtonClick()">
         <i class="pi pi-cog"></i>
     </button>
 

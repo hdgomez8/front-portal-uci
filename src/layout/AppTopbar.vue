@@ -2,12 +2,16 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 
 const { layoutConfig, onMenuToggle } = useLayout();
-
+const popup = ref(null);
 const outsideClickListener = ref(null);
 const topbarMenuActive = ref(false);
 const router = useRouter();
+const toast = useToast();
+const confirmPopup = useConfirm();
 
 onMounted(() => {
     bindOutsideClickListener();
@@ -58,6 +62,19 @@ const isOutsideClicked = (event) => {
 
     return !(sidebarEl.isSameNode(event.target) || sidebarEl.contains(event.target) || topbarEl.isSameNode(event.target) || topbarEl.contains(event.target));
 };
+const confirm = (event) => {
+    confirmPopup.require({
+        target: event.target,
+        message: 'Cerrar la sesión',
+        icon: 'pi pi-sign-out',
+        accept: () => {
+            toast.add({ severity: 'info', summary: 'Confirmed', detail: 'You have accepted', life: 3000 });
+        },
+        reject: () => {
+            toast.add({ severity: 'info', summary: 'Rejected', detail: 'You have rejected', life: 3000 });
+        }
+    });
+};
 </script>
 
 <template>
@@ -75,18 +92,9 @@ const isOutsideClicked = (event) => {
         </button>
 
         <div class="layout-topbar-menu" :class="topbarMenuClasses">
-            <button @click="onTopBarMenuButton()" class="p-link layout-topbar-button">
-                <i class="pi pi-calendar"></i>
-                <span>Calendar</span>
-            </button>
-            <button @click="onTopBarMenuButton()" class="p-link layout-topbar-button">
-                <i class="pi pi-user"></i>
-                <span>Profile</span>
-            </button>
-            <button @click="onSettingsClick()" class="p-link layout-topbar-button">
-                <i class="pi pi-cog"></i>
-                <span>Settings</span>
-            </button>
+            <ConfirmPopup></ConfirmPopup>
+            <Toast />
+            <Button ref="popup" @click="confirm($event)" icon="pi pi-user" class="mr-2"></Button>
         </div>
     </div>
 </template>

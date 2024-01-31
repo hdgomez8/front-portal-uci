@@ -5,7 +5,9 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import PermissionsService from '@/service/PermissionsService';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
+import { useStore } from '@/store';
 
+const store = useStore();
 //Variables
 const toast = useToast();
 const permissions = ref(null);
@@ -19,7 +21,15 @@ const selectedPermissions = ref(null);
 const dt = ref(null);
 const filters = ref({});
 const submitted = ref(false);
-const tiposDePermisos = ref([{ value: 'CALAMIDAD DOMESTICA' }, { value: 'LICENCIA NO REMUNERADA' }, { value: 'LICENCIA REMUNERADA' }, { value: 'CONSULTA MEDICA' }, { value: 'ASUNTO PERSONAL' }, { value: 'ASUNTOS LABORALES' }]);
+const tiposDePermisos = ref([
+    {value:'SELECCIONE',id:null},
+    { value: 'CALAMIDAD DOMESTICA', id: 1 },
+    { value: 'LICENCIA NO REMUNERADA', id: 2 },
+    { value: 'LICENCIA REMUNERADA', id: 3 },
+    { value: 'CONSULTA MEDICA', id: 4 },
+    { value: 'ASUNTO PERSONAL', id: 5 },
+    { value: 'ASUNTOS LABORALES', id: 6 }
+]);
 const uploadedFiles = ref([]);
 const permissionsService = new PermissionsService();
 const soportesPresentados = ref([]);
@@ -30,12 +40,17 @@ onBeforeMount(() => {
     initFilters();
 });
 /*llamar informacion del servicio-obtener permisos*/
-onMounted(() => {
-    permissionsService.getPermisos().then((data) => {
+
+onMounted(async () => {
+    try {
+        const response = await axios.get('/requests');
+        const { data } = response.data;
         permissions.value = data;
-        // Agrega un console.log para verificar la estructura de permissions.value
         console.log('Estructura de permissions.value:', permissions.value);
-    });
+    } catch (error) {
+        console.error('Error al obtener permisos:', error);
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al obtener permisos', life: 3000 });
+    }
 });
 
 //Funciones
@@ -48,33 +63,31 @@ const onUpload = (files) => {
 };
 
 const openNew = () => {
-    const today = new Date();
-    const day = today.getDate().toString().padStart(2, '0'); // Obtiene el día y lo formatea a dos dígitos (por ejemplo, 08)
-    const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Obtiene el mes (se suma 1 ya que los meses en JavaScript comienzan en 0) y lo formatea a dos dígitos (por ejemplo, 08)
-    const year = today.getFullYear(); // Obtiene el año
+    const user = store.user;
 
-    // Obtener la fecha del calendario y formatearla
-    const selectedDate = calendarValuePermissionDate.value;
-    const formattedDate = selectedDate ? selectedDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' }) : null;
+    // Obtener la fecha actual
+    const fechaActual = new Date();
+    const dia = fechaActual.getDate().toString().padStart(2, '0');
+    const mes = (fechaActual.getMonth() + 1).toString().padStart(2, '0'); // Se suma 1 porque los meses van de 0 a 11
+    const anno = fechaActual.getFullYear();
+
+    const fechaActualString = `${dia}/${mes}/${anno}`;
+
+    console.log('usuario', user);
 
     permission.value = {
-        name: 'Hector Gomez',
-        cargo: 'Desarrollador',
-        area: 'TI',
-        jefeInmediato: 'Paula Londoño',
-        fechaSolicitud: '20-08-2023',
-        fechaPermiso: formattedDate,
-        horaPermiso: '10:00',
-        category: 'Accessories',
-        duracionPermiso: 2,
-        Status: 'PENDIENTE',
-        tipoPermiso: 'ASUNTO PERSONAL',
-        soportesPresentados: [],
+        employeeFullName: `${user.first_name} ${user.last_name}`,
+        employee: {
+            title: user.title,
+            department: user.department.length > 0 ? [user.department[0]] : []
+        },
+        jefeInmediato: `${user.manager.first_name} ${user.manager.last_name}`,
+        fechaSolicitud: fechaActualString,
+        tipoPermiso:{id:null}
     };
+    console.log('usuario value', permission.value);
     submitted.value = false;
 
-    // Construye la fecha en el formato deseado
-    permission.value.fechaSolicitud = `${day}-${month}-${year}`;
     permissionDialog.value = true;
 };
 
@@ -113,8 +126,16 @@ const savePermission = () => {
 };
 
 const editPermission = (editPermission) => {
-    permission.value = { ...editPermission };
-    console.log(permission);
+    permission.value = {
+        ...editPermission,
+        fechaSolicitud: `${formatDate(editPermission.created_at)}`,
+        fechaPermiso: `${formatDate(editPermission.date)}`,
+        employeeFullName: `${editPermission.employee.first_name} ${editPermission.employee.last_name}`,
+        horaPermiso: `${formatHour(editPermission.time)}`,
+        tipoPermiso: editPermission.type,
+        jefeInmediato: `${editPermission.employee.manager.first_name} ${editPermission.employee.manager.last_name}`
+    };
+console.log(permission.value.tipoPermiso.id);
     permissionDialog.value = true;
 };
 
@@ -162,6 +183,39 @@ const initFilters = () => {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     };
 };
+
+const formatDate = (dateString) => {
+    // Crea un objeto Date a partir de la cadena de fecha
+    const dateObject = new Date(dateString);
+
+    // Obtiene el día, mes y año
+    const day = dateObject.getDate();
+    const month = dateObject.getMonth() + 1; // ¡Recuerda sumar 1 al mes!
+    const year = dateObject.getFullYear();
+
+    // Formatea los valores para asegurar que tengan dos dígitos
+    const formattedDay = day.toString().padStart(2, '0');
+    const formattedMonth = month.toString().padStart(2, '0');
+
+    // Devuelve la fecha formateada
+    return `${formattedDay}/${formattedMonth}/${year}`;
+};
+
+const formatHour = (timeString) => {
+    // Crea un objeto Date a partir de la cadena de tiempo
+    const timeObject = new Date(timeString);
+
+    // Obtiene la hora y los minutos
+    const hours = timeObject.getUTCHours();
+    const minutes = timeObject.getUTCMinutes();
+
+    // Formatea los valores para asegurar que tengan dos dígitos
+    const formattedHours = hours.toString().padStart(2, '0');
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+
+    // Devuelve la hora formateada
+    return `${formattedHours}:${formattedMinutes}`;
+};
 </script>
 
 <template>
@@ -203,53 +257,54 @@ const initFilters = () => {
                     <Column field="code" header="Empleado" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Empleado</span>
-                            {{ slotProps.data.name }}
+                            {{ slotProps.data.employee.first_name }} {{ slotProps.data.employee.last_name }}
                         </template>
                     </Column>
                     <Column field="category" header="Fecha Solicitud" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Fecha Solicitud</span>
-                            {{ slotProps.data.fechaSolicitud }}
+                            <span>{{ formatDate(slotProps.data.created_at) }}</span>
                         </template>
                     </Column>
                     <Column field="category" header="Fecha Permiso" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Fecha Permiso</span>
-                            <span>{{ slotProps.data.fechaPermiso }}</span>
+                            <span>{{ formatDate(slotProps.data.date) }}</span>
                         </template>
                     </Column>
                     <Column field="Status" header="Estado De Solicitud" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Estado De Solicitud</span>
-                            <span :class="'permission-badge status-' + (slotProps.data.Status ? slotProps.data.Status.toLowerCase() : '')">{{ slotProps.data.Status }}</span>
+                            <span :class="'permission-badge status-' + (slotProps.data.status ? slotProps.data.status.toLowerCase() : '')">{{ slotProps.data.status === 'open' ? 'ABIERTO' : slotProps.data.status.toUpperCase() }}</span>
+                        </template>
+                    </Column>
+                    <Column field="type" header="Tipo Permiso" :sortable="true" headerStyle="width:14%; min-width:10rem;">
+                        <template #body="slotProps">
+                            <span class="p-column-title">Tipo Del Permiso</span>
+                            <span :class="'permission-badge status-' + (slotProps.data.type.name ? slotProps.data.type.name.toLowerCase() : '')">{{ slotProps.data.type.name.toUpperCase() }}</span>
                         </template>
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
                             <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editPermission(slotProps.data)" />
-                        </template>
-                    </Column>
-                    <Column headerStyle="min-width:10rem;">
-                        <template #body="slotProps">
                             <Button icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" />
-                            <a href="crearPdf.php" target="_blank">Generar PDF</a>
                         </template>
                     </Column>
                 </DataTable>
 
-                <Dialog v-model:visible="permissionDialog" :style="{ width: '950px' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
+                <Dialog v-model:visible="permissionDialog" :style="{ width: '1100px' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
                     <div class="formgrid grid">
-                        <div class="field col-3">
+                        <div class="field col-4">
                             <label for="nombreEmpleado">Nombre Empleado</label>
-                            <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="permission.name" readonly disabled />
+                            <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="permission.employeeFullName" readonly disabled />
                         </div>
                         <div class="field col-3">
                             <label for="cargo">Cargo</label>
-                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.cargo" readonly disabled />
+                            <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.employee.title" readonly disabled />
                         </div>
-                        <div class="field col-3">
+                        <div class="field col-2">
                             <label for="area">Area</label>
-                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.area" readonly disabled />
+                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.employee.department[0].name" readonly disabled />
                         </div>
                         <div class="field col-3">
                             <label for="jefeInmediato">Jefe Inmediato</label>
@@ -260,25 +315,25 @@ const initFilters = () => {
                     <div class="formgrid grid">
                         <div class="field col-3">
                             <label for="fechaSolicitud">Fecha Solicitud</label>
-                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="calendarValueApplicationDate" dateFormat="dd/mm/yy" readonly disabled></Calendar>
+                            <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="permission.fechaSolicitud" dateFormat="dd/mm/yy" readonly disabled></Calendar>
                         </div>
                         <div class="field col-3">
                             <label for="fechaPermiso">Fecha Permiso</label>
-                            <Calendar id="fechaPermiso" :showIcon="true" :showButtonBar="true" v-model="calendarValuePermissionDate" dateFormat="dd/mm/yy"></Calendar>
+                            <Calendar id="fechaPermiso" :showIcon="true" :showButtonBar="true" v-model="permission.fechaPermiso" dateFormat="dd/mm/yy"></Calendar>
                         </div>
                         <div class="field col-2">
                             <label for="horaPermiso">Hora Permiso:</label>
-                            <InputText id="horaPermiso" v-model="permission.horaPermiso" type="time" />
+                            <InputText id="horaPermiso" v-model="permission.time" type="time" />
                         </div>
                         <div class="field col-4">
                             <label for="duracionPermiso">Duración Del Permiso(Horas):</label>
-                            <InputNumber id="duracionPermiso" v-model="permission.duracionPermiso" showButtons :min="1" mode="decimal"></InputNumber>
+                            <InputNumber id="duracionPermiso" v-model="permission.long" showButtons :min="1" mode="decimal"></InputNumber>
                         </div>
                     </div>
 
                     <div class="field">
                         <label for="tipoPermiso" class="mb-3">Tipo De Permiso</label>
-                        <Dropdown id="tipoPermiso" v-model="permission.tipoPermiso" :options="tiposDePermisos" optionLabel="value" placeholder="Selecciona Tipo De Permiso"> </Dropdown>
+                        <Dropdown id="tipoPermiso" v-model="permission.tipoPermiso.id" :options="tiposDePermisos" optionLabel="value" placeholder="Selecciona Tipo De Permiso" optionValue="id"> </Dropdown>
                     </div>
 
                     <div class="field">
@@ -288,12 +343,14 @@ const initFilters = () => {
 
                     <div class="field">
                         <label for="observaciones">Observaciones</label>
-                        <Textarea id="observaciones" v-model="permission.observaciones" required="true" rows="3" cols="20" />
+                        <Textarea id="observaciones" v-model="permission.obvservations" required="true" rows="3" cols="20" />
                     </div>
 
                     <template #footer>
-                        <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
-                        <Button label="Solicitar" icon="pi pi-check" class="p-button-text" @click="savePermission" />
+                        <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
+                        <Button label="Rechazar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
+                        <Button label="Aprobar" icon="pi pi-check" class="p-button-text" @click="savePermission" />
+                        <Button label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
                     </template>
                 </Dialog>
 

@@ -3,7 +3,8 @@ import App from './App.vue';
 import router from './router';
 import { createPinia } from 'pinia';
 import { useStore } from '@/store'; // Importa tu store Pinia
-
+import axios from 'axios';
+import createPersistedState from 'vuex-persistedstate';
 import PrimeVue from 'primevue/config';
 import AutoComplete from 'primevue/autocomplete';
 import Accordion from 'primevue/accordion';
@@ -105,7 +106,7 @@ import VirtualScroller from 'primevue/virtualscroller';
 import BlockViewer from '@/components/BlockViewer.vue';
 
 import '@/assets/styles.scss';
-
+axios.defaults.baseURL = 'http://localhost:8000/api';
 const app = createApp(App);
 const pinia = createPinia();
 
@@ -117,15 +118,17 @@ app.use(ConfirmationService);
 
 // Redirigir automáticamente a la página de inicio de sesión
 router.beforeEach((to, from, next) => {
-    const store = useStore(); // Accede al store Pinia
+    // const store = useStore(); // Accede al store Pinia
+    const token = localStorage.getItem('token');
     if (to.name === 'login') {
-        if (store.isAuthenticated) {
+        if (token) {
             next({ name: 'dashboard' }); // Si el usuario está autenticado, redirige a la dashboard
         } else {
             next(); // Permite el acceso a la página de inicio de sesión si no está autenticado
         }
     } else {
-        if (store.isAuthenticated) {
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             next(); // Si el usuario está autenticado, permite el acceso a la ruta solicitada
         } else {
             next({ name: 'login' }); // Si el usuario no está autenticado, redirige a la página de inicio de sesión
