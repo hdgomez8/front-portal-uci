@@ -2,7 +2,7 @@
 //Importaciones
 import { FilterMatchMode } from 'primevue/api';
 import { ref, onMounted, onBeforeMount } from 'vue';
-import PermissionsService from '@/service/PermissionsService';
+
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 import { useStore } from '@/store';
@@ -14,15 +14,14 @@ const permissions = ref(null);
 const permissionDialog = ref(false);
 const deletePermissionDialog = ref(false);
 const deletePermissionsDialog = ref(false);
-const calendarValueApplicationDate = ref(new Date());
-const calendarValuePermissionDate = ref(new Date());
+
 const permission = ref({});
 const selectedPermissions = ref(null);
 const dt = ref(null);
 const filters = ref({});
 const submitted = ref(false);
 const tiposDePermisos = ref([
-    {value:'SELECCIONE',id:null},
+    { value: 'SELECCIONE', id: null },
     { value: 'CALAMIDAD DOMESTICA', id: 1 },
     { value: 'LICENCIA NO REMUNERADA', id: 2 },
     { value: 'LICENCIA REMUNERADA', id: 3 },
@@ -30,8 +29,7 @@ const tiposDePermisos = ref([
     { value: 'ASUNTO PERSONAL', id: 5 },
     { value: 'ASUNTOS LABORALES', id: 6 }
 ]);
-const uploadedFiles = ref([]);
-const permissionsService = new PermissionsService();
+
 const soportesPresentados = ref([]);
 
 //Ciclos De Vida
@@ -56,7 +54,7 @@ onMounted(async () => {
 //Funciones
 const onUpload = (files) => {
     // Agrega los archivos cargados al arreglo soportesPresentados
-    soportesPresentados.value = [...soportesPresentados.value, ...files];
+    soportesPresentados.value = files;
 
     // Puedes realizar cualquier otra lógica necesaria aquí
     toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
@@ -73,8 +71,6 @@ const openNew = () => {
 
     const fechaActualString = `${dia}/${mes}/${anno}`;
 
-    console.log('usuario', user);
-
     permission.value = {
         employeeFullName: `${user.first_name} ${user.last_name}`,
         employee: {
@@ -83,7 +79,11 @@ const openNew = () => {
         },
         jefeInmediato: `${user.manager.first_name} ${user.manager.last_name}`,
         fechaSolicitud: fechaActualString,
-        tipoPermiso:{id:null}
+        tipoPermiso: { id: null },
+        files: [],
+        time: '00:00:00',
+        long: null,
+        obvservations: ''
     };
     console.log('usuario value', permission.value);
     submitted.value = false;
@@ -97,7 +97,7 @@ const hideDialog = () => {
 };
 
 const savePermission = () => {
-    console.log('Datos ingresados en el formulario:', permission.value);
+    /*     console.log('Datos ingresados en el formulario:', permission.value,soportesPresentados.value);
 
     submitted.value = true;
     if (permission.value.fechaSolicitud && permission.value.fechaPermiso) {
@@ -122,7 +122,34 @@ const savePermission = () => {
         }
         permissionDialog.value = false;
         permission.value = {};
-    }
+    } */
+    console.log(soportesPresentados.value.files.length, soportesPresentados.value.files);
+    const data = new FormData();
+    data.append('request_type_id', permission.value.tipoPermiso.id);
+    data.append('date', permission.value.fechaPermiso.toISOString().split('T')[0]);
+    data.append('time', convertTimeToSeconds(permission.value.time));
+    data.append('long', permission.value.long);
+    data.append('observations', permission.value.obvservations);
+
+    soportesPresentados.value.files.forEach((file) => {
+        data.append('files[]', file);
+    });
+
+    axios
+        .post('/requests', data, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        .then((response) => {
+            console.log('response', response);
+            toast.add({ severity: 'success', summary: 'Successful', detail: 'Permiso Creado', life: 3000 });
+            permissionDialog.value = false;
+        })
+        .catch((error) => {
+            console.error('Error al crear permiso:', error);
+            toast.add({ severity: 'error', summary: 'Error', detail: 'Error al crear permiso', life: 3000 });
+        });
 };
 
 const editPermission = (editPermission) => {
@@ -135,13 +162,8 @@ const editPermission = (editPermission) => {
         tipoPermiso: editPermission.type,
         jefeInmediato: `${editPermission.employee.manager.first_name} ${editPermission.employee.manager.last_name}`
     };
-console.log(permission.value.tipoPermiso.id);
-    permissionDialog.value = true;
-};
 
-const confirmDeleteProduct = (editPermission) => {
-    permission.value = editPermission;
-    deletePermissionDialog.value = true;
+    permissionDialog.value = true;
 };
 
 const deleteProduct = () => {
@@ -151,7 +173,7 @@ const deleteProduct = () => {
     toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Deleted', life: 3000 });
 };
 
-const findIndexById = (id) => {
+/* const findIndexById = (id) => {
     let index = -1;
     for (let i = 0; i < permissions.value.length; i++) {
         if (permissions.value[i].id === id) {
@@ -169,7 +191,7 @@ const createId = () => {
         id += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return id;
-};
+}; */
 
 const deleteSelectedProducts = () => {
     permissions.value = permissions.value.filter((val) => !selectedPermissions.value.includes(val));
@@ -182,6 +204,13 @@ const initFilters = () => {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     };
+};
+const convertTimeToSeconds = (timeString) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const totalSeconds = hours * 3600 + minutes * 60;
+    const formattedTime = new Date(totalSeconds * 1000).toISOString().substr(11, 8);
+
+    return formattedTime;
 };
 
 const formatDate = (dateString) => {
@@ -319,26 +348,26 @@ const formatHour = (timeString) => {
                         </div>
                         <div class="field col-3">
                             <label for="fechaPermiso">Fecha Permiso</label>
-                            <Calendar id="fechaPermiso" :showIcon="true" :showButtonBar="true" v-model="permission.fechaPermiso" dateFormat="dd/mm/yy"></Calendar>
+                            <Calendar id="fechaPermiso" :showIcon="true" :showButtonBar="true" v-model="permission.fechaPermiso" dateFormat="dd/mm/yy" required></Calendar>
                         </div>
                         <div class="field col-2">
                             <label for="horaPermiso">Hora Permiso:</label>
-                            <InputText id="horaPermiso" v-model="permission.time" type="time" />
+                            <InputText id="horaPermiso" v-model="permission.time" type="time" required />
                         </div>
                         <div class="field col-4">
                             <label for="duracionPermiso">Duración Del Permiso(Horas):</label>
-                            <InputNumber id="duracionPermiso" v-model="permission.long" showButtons :min="1" mode="decimal"></InputNumber>
+                            <InputNumber id="duracionPermiso" v-model="permission.long" showButtons :min="1" mode="decimal" required></InputNumber>
                         </div>
                     </div>
 
                     <div class="field">
                         <label for="tipoPermiso" class="mb-3">Tipo De Permiso</label>
-                        <Dropdown id="tipoPermiso" v-model="permission.tipoPermiso.id" :options="tiposDePermisos" optionLabel="value" placeholder="Selecciona Tipo De Permiso" optionValue="id"> </Dropdown>
+                        <Dropdown required id="tipoPermiso" v-model="permission.tipoPermiso.id" :options="tiposDePermisos" optionLabel="value" placeholder="Selecciona Tipo De Permiso" optionValue="id"> </Dropdown>
                     </div>
 
                     <div class="field">
                         <h5>Soportes Presentados</h5>
-                        <FileUpload name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
+                        <FileUpload v-model="permission.files" name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
                     </div>
 
                     <div class="field">
@@ -348,8 +377,7 @@ const formatHour = (timeString) => {
 
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
-                        <Button label="Rechazar" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
-                        <Button label="Aprobar" icon="pi pi-check" class="p-button-text" @click="savePermission" />
+
                         <Button label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
                     </template>
                 </Dialog>

@@ -2,9 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createPinia } from 'pinia';
-import { useStore } from '@/store'; // Importa tu store Pinia
 import axios from 'axios';
-import createPersistedState from 'vuex-persistedstate';
 import PrimeVue from 'primevue/config';
 import AutoComplete from 'primevue/autocomplete';
 import Accordion from 'primevue/accordion';
@@ -106,7 +104,7 @@ import VirtualScroller from 'primevue/virtualscroller';
 import BlockViewer from '@/components/BlockViewer.vue';
 
 import '@/assets/styles.scss';
-axios.defaults.baseURL = 'http://localhost:8000/api';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 const app = createApp(App);
 const pinia = createPinia();
 
