@@ -29,7 +29,7 @@ const tiposDePermisos = ref([
     { value: 'ASUNTO PERSONAL', id: 5 },
     { value: 'ASUNTOS LABORALES', id: 6 }
 ]);
-
+const minDate = ref(new Date());
 const soportesPresentados = ref([]);
 
 //Ciclos De Vida
@@ -44,7 +44,8 @@ onMounted(async () => {
         const response = await axios.get('/requests');
         const { data } = response.data;
         permissions.value = data;
-        console.log('Estructura de permissions.value:', permissions.value);
+        const userJSON = localStorage.getItem('user');
+        const user = JSON.parse(userJSON);
     } catch (error) {
         console.error('Error al obtener permisos:', error);
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al obtener permisos', life: 3000 });
@@ -56,12 +57,12 @@ const onUpload = (files) => {
     // Agrega los archivos cargados al arreglo soportesPresentados
     soportesPresentados.value = files;
 
-    // Puedes realizar cualquier otra lógica necesaria aquí
     toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
 };
 
 const openNew = () => {
-    const user = store.user;
+    const userJSON = localStorage.getItem('user');
+    const user = JSON.parse(userJSON);
 
     // Obtener la fecha actual
     const fechaActual = new Date();
@@ -83,7 +84,7 @@ const openNew = () => {
         files: [],
         time: '00:00:00',
         long: null,
-        obvservations: ''
+        observations: ''
     };
     console.log('usuario value', permission.value);
     submitted.value = false;
@@ -97,39 +98,13 @@ const hideDialog = () => {
 };
 
 const savePermission = () => {
-    /*     console.log('Datos ingresados en el formulario:', permission.value,soportesPresentados.value);
-
-    submitted.value = true;
-    if (permission.value.fechaSolicitud && permission.value.fechaPermiso) {
-        if (permission.value.id) {
-            console.log('aqui 1');
-            permission.value.Status = permission.value.Status.value ? permission.value.Status.value : permission.value.Status;
-            permission.value[findIndexById(permission.value.id)] = permission.value;
-            toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Updated', life: 3000 });
-        } else {
-            console.log('aqui 2');
-            permission.value.id = createId();
-            console.log('Antes del push', permissions);
-            permissions.value.push({ ...permission.value });
-            console.log('Despues del push', permissions);
-            toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Created', life: 3000 });
-        }
-
-        // Agregar lógica para mostrar información de archivos adjuntos después de guardar.
-        if (permission.value.soportesPresentados && permission.value.soportesPresentados.length > 0) {
-            console.log('Archivos adjuntos guardados:', permission.value.soportesPresentados);
-            // Puedes mostrarlos de la manera que desees, tal vez en un toast o en otra parte de tu interfaz.
-        }
-        permissionDialog.value = false;
-        permission.value = {};
-    } */
     console.log(soportesPresentados.value.files.length, soportesPresentados.value.files);
     const data = new FormData();
     data.append('request_type_id', permission.value.tipoPermiso.id);
     data.append('date', permission.value.fechaPermiso.toISOString().split('T')[0]);
     data.append('time', convertTimeToSeconds(permission.value.time));
     data.append('long', permission.value.long);
-    data.append('observations', permission.value.obvservations);
+    data.append('observations', permission.value.observations);
 
     soportesPresentados.value.files.forEach((file) => {
         data.append('files[]', file);
@@ -153,16 +128,20 @@ const savePermission = () => {
 };
 
 const editPermission = (editPermission) => {
+    console.log(editPermission);
     permission.value = {
         ...editPermission,
         fechaSolicitud: `${formatDate(editPermission.created_at)}`,
         fechaPermiso: `${formatDate(editPermission.date)}`,
-        employeeFullName: `${editPermission.employee.first_name} ${editPermission.employee.last_name}`,
+        employeeFullName: editPermission.employee ? `${editPermission.employee.first_name} ${editPermission.employee.last_name}` : '',
         horaPermiso: `${formatHour(editPermission.time)}`,
         tipoPermiso: editPermission.type,
-        jefeInmediato: `${editPermission.employee.manager.first_name} ${editPermission.employee.manager.last_name}`
+        employee: {
+            title: editPermission.employee.title,
+            department: editPermission.employee.department.length > 0 ? [editPermission.employee.department[0]] : []
+        },
+        jefeInmediato: editPermission.employee && editPermission.employee.manager ? `${editPermission.employee.manager.first_name} ${editPermission.employee.manager.last_name}` : ''
     };
-
     permissionDialog.value = true;
 };
 
@@ -172,26 +151,6 @@ const deleteProduct = () => {
     permission.value = {};
     toast.add({ severity: 'success', summary: 'Successful', detail: 'permission Deleted', life: 3000 });
 };
-
-/* const findIndexById = (id) => {
-    let index = -1;
-    for (let i = 0; i < permissions.value.length; i++) {
-        if (permissions.value[i].id === id) {
-            index = i;
-            break;
-        }
-    }
-    return index;
-};
-
-const createId = () => {
-    let id = '';
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < 5; i++) {
-        id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
-}; */
 
 const deleteSelectedProducts = () => {
     permissions.value = permissions.value.filter((val) => !selectedPermissions.value.includes(val));
@@ -270,7 +229,7 @@ const formatHour = (timeString) => {
                     :filters="filters"
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                     :rowsPerPageOptions="[5, 10, 25]"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} permissions"
+                    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} permisos"
                     responsiveLayout="scroll"
                 >
                     <template #header>
@@ -278,7 +237,7 @@ const formatHour = (timeString) => {
                             <h5 class="m-0">Permisos</h5>
                             <span class="block mt-2 md:mt-0 p-input-icon-left">
                                 <i class="pi pi-search" />
-                                <InputText v-model="filters['global'].value" placeholder="Search..." />
+                                <InputText v-model="filters['global'].value" placeholder="Buscar..." />
                             </span>
                         </div>
                     </template>
@@ -333,7 +292,7 @@ const formatHour = (timeString) => {
                         </div>
                         <div class="field col-2">
                             <label for="area">Area</label>
-                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.employee.department[0].name" readonly disabled />
+                            <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.employee.department[0].name" :value="permission.employee.department[0].name.toUpperCase()" readonly disabled />
                         </div>
                         <div class="field col-3">
                             <label for="jefeInmediato">Jefe Inmediato</label>
@@ -348,7 +307,7 @@ const formatHour = (timeString) => {
                         </div>
                         <div class="field col-3">
                             <label for="fechaPermiso">Fecha Permiso</label>
-                            <Calendar id="fechaPermiso" :showIcon="true" :showButtonBar="true" v-model="permission.fechaPermiso" dateFormat="dd/mm/yy" required></Calendar>
+                            <Calendar id="fechaPermiso" :showIcon="true" :minDate="minDate" :showButtonBar="true" v-model="permission.fechaPermiso" dateFormat="dd/mm/yy" required></Calendar>
                         </div>
                         <div class="field col-2">
                             <label for="horaPermiso">Hora Permiso:</label>
@@ -367,17 +326,24 @@ const formatHour = (timeString) => {
 
                     <div class="field">
                         <h5>Soportes Presentados</h5>
-                        <FileUpload v-model="permission.files" name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
+                        <FileUpload v-model="permission.medias" name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
+                        <ul>
+                            <li v-for="(file, index) in permission.medias" :key="index">
+                                <a :href="file.url" target="_blank">{{ file.name }}</a>
+                            </li>
+                        </ul>
                     </div>
 
                     <div class="field">
                         <label for="observaciones">Observaciones</label>
-                        <Textarea id="observaciones" v-model="permission.obvservations" required="true" rows="3" cols="20" />
+                        <Textarea id="observaciones" v-model="permission.observations" required="true" rows="3" cols="20" />
                     </div>
 
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
-
+                        <Button label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="hideDialog" />
+                        <Button label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="hideDialog" />
+                        <Button label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
                         <Button label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
                     </template>
                 </Dialog>

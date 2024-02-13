@@ -20,8 +20,10 @@ const handleLogin = async () => {
         if (response.data.token) {
             // Guarda el token en localStorage
             localStorage.setItem('token', response.data.token);
-            store.user = response.data.user;
-            console.log(response.data.user);
+            // Guarda el user en localStorage
+            const user = response.data.user;
+            const userJSON = JSON.stringify(user);
+            localStorage.setItem('user', userJSON);
             // localStorage.setItem('user', response.data.user.id);
             // Configura el encabezado de autorización para futuras solicitudes
             axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
