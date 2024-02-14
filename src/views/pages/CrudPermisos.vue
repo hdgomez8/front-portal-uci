@@ -84,7 +84,8 @@ const openNew = () => {
         files: [],
         time: '00:00:00',
         long: null,
-        observations: ''
+        observations: '',
+        boton:'nuevo'
     };
     console.log('usuario value', permission.value);
     submitted.value = false;
@@ -120,6 +121,8 @@ const savePermission = () => {
             console.log('response', response);
             toast.add({ severity: 'success', summary: 'Successful', detail: 'Permiso Creado', life: 3000 });
             permissionDialog.value = false;
+            // Reiniciar la página
+            window.location.reload();
         })
         .catch((error) => {
             console.error('Error al crear permiso:', error);
@@ -134,13 +137,14 @@ const editPermission = (editPermission) => {
         fechaSolicitud: `${formatDate(editPermission.created_at)}`,
         fechaPermiso: `${formatDate(editPermission.date)}`,
         employeeFullName: editPermission.employee ? `${editPermission.employee.first_name} ${editPermission.employee.last_name}` : '',
-        horaPermiso: `${formatHour(editPermission.time)}`,
+        time: `${formatHour(editPermission.time)}`,
         tipoPermiso: editPermission.type,
         employee: {
             title: editPermission.employee.title,
             department: editPermission.employee.department.length > 0 ? [editPermission.employee.department[0]] : []
         },
-        jefeInmediato: editPermission.employee && editPermission.employee.manager ? `${editPermission.employee.manager.first_name} ${editPermission.employee.manager.last_name}` : ''
+        jefeInmediato: editPermission.employee && editPermission.employee.manager ? `${editPermission.employee.manager.first_name} ${editPermission.employee.manager.last_name}` : '',
+        boton:'editar'
     };
     permissionDialog.value = true;
 };
@@ -326,7 +330,7 @@ const formatHour = (timeString) => {
 
                     <div class="field">
                         <h5>Soportes Presentados</h5>
-                        <FileUpload v-model="permission.medias" name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload />
+                        <FileUpload v-model="permission.medias" name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload chooseLabel="Seleccionar" uploadLabel="Subir" cancelLabel="Cancelar" />
                         <ul>
                             <li v-for="(file, index) in permission.medias" :key="index">
                                 <a :href="file.url" target="_blank">{{ file.name }}</a>
@@ -341,10 +345,10 @@ const formatHour = (timeString) => {
 
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
-                        <Button label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="hideDialog" />
-                        <Button label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="hideDialog" />
-                        <Button label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
-                        <Button label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
+                        <Button v-if="permission.employee.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="hideDialog" />
+                        <Button v-if="permission.employee.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="hideDialog" />
+                        <Button v-if="permission.boton == 'editar'" label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
+                        <Button v-if="permission.boton == 'nuevo'" label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
                     </template>
                 </Dialog>
 
@@ -377,4 +381,8 @@ const formatHour = (timeString) => {
     </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.file-upload-button::before {
+    content: 'Seleccionar'; /* Cambia el texto aquí */
+}
+</style>
