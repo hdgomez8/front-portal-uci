@@ -98,8 +98,23 @@ const hideDialog = () => {
     submitted.value = false;
 };
 
+const handleStatusChange=async (status)=>
+{
+    
+    permission.value.status=status;
+    permission.value.time=convertTimeToSeconds(permission.value.time);
+    const response= await axios.put(`/requests/${permission.value.id}`,{...permission.value});
+    const statusValue = status==='approve'? 'Aprobado':'Rechazado'
+    if  (response.status=200){
+        toast.add({ severity: 'success', summary: 'Successful', detail: `Permiso ${statusValue}`, life: 3000 });
+            permissionDialog.value = false;
+            window.location.reload();
+    }else{
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al crear permiso', life: 3000 });
+    }
+}
+
 const savePermission = () => {
-    console.log(soportesPresentados.value.files.length, soportesPresentados.value.files);
     const data = new FormData();
     data.append('request_type_id', permission.value.tipoPermiso.id);
     data.append('date', permission.value.fechaPermiso.toISOString().split('T')[0]);
@@ -107,9 +122,11 @@ const savePermission = () => {
     data.append('long', permission.value.long);
     data.append('observations', permission.value.observations);
 
+   if(soportesPresentados.value.length>0) {
     soportesPresentados.value.files.forEach((file) => {
         data.append('files[]', file);
     });
+    }
 
     axios
         .post('/requests', data, {
@@ -117,11 +134,9 @@ const savePermission = () => {
                 'Content-Type': 'multipart/form-data'
             }
         })
-        .then((response) => {
-            console.log('response', response);
+        .then(() => {         
             toast.add({ severity: 'success', summary: 'Successful', detail: 'Permiso Creado', life: 3000 });
             permissionDialog.value = false;
-            // Reiniciar la página
             window.location.reload();
         })
         .catch((error) => {
@@ -131,7 +146,7 @@ const savePermission = () => {
 };
 
 const editPermission = (editPermission) => {
-    console.log(editPermission);
+
     permission.value = {
         ...editPermission,
         fechaSolicitud: `${formatDate(editPermission.created_at)}`,
@@ -172,7 +187,7 @@ const convertTimeToSeconds = (timeString) => {
     const [hours, minutes] = timeString.split(':').map(Number);
     const totalSeconds = hours * 3600 + minutes * 60;
     const formattedTime = new Date(totalSeconds * 1000).toISOString().substr(11, 8);
-
+    console.log(formattedTime)
     return formattedTime;
 };
 
@@ -345,8 +360,8 @@ const formatHour = (timeString) => {
 
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
-                        <Button v-if="permission.employee.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="hideDialog" />
-                        <Button v-if="permission.employee.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="hideDialog" />
+                        <Button v-if="permission.employee.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="handleStatusChange('reject')" />
+                        <Button v-if="permission.employee.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="handleStatusChange('approve')" />
                         <Button v-if="permission.boton == 'editar'" label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
                         <Button v-if="permission.boton == 'nuevo'" label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
                     </template>
