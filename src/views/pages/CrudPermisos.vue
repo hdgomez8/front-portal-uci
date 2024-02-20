@@ -100,7 +100,7 @@ const openNew = () => {
         time: '00:00:00',
         long: null,
         observations: '',
-        boton: 'nuevo',
+        boton: 'nuevo'
     };
     console.log('usuario value', permission.value);
     submitted.value = false;
@@ -114,7 +114,6 @@ const hideDialog = () => {
 };
 
 const handleStatusChange = async (status) => {
-    console.log(permission.value);
     permission.value.status = status;
     permission.value.time = convertTimeToSeconds(permission.value.time);
     const response = await axios.put(`/requests/${permission.value.id}`, { ...permission.value });
@@ -126,6 +125,26 @@ const handleStatusChange = async (status) => {
     } else {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al crear permiso', life: 3000 });
     }
+};
+
+const generatePDF = (permissions) => {
+    console.log(permissions);
+    axios
+        .post('/requests/generatePDF', permissions, { responseType: 'blob' })
+        .then((response) => {
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'request_status.pdf');
+            document.body.appendChild(link);
+            link.click();
+            window.URL.revokeObjectURL(url);
+            console.log('PDF generado correctamente');
+        })
+        .catch((error) => {
+            // Manejar errores
+            console.error('Error al generar el PDF:', error);
+        });
 };
 
 const savePermission = () => {
@@ -260,7 +279,6 @@ const acceptPermission = async (id) => {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar la solicitud', life: 3000 });
     }
 };
-
 </script>
 
 <template>
@@ -332,7 +350,7 @@ const acceptPermission = async (id) => {
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
                             <Button v-if="slotProps.data.status == 'open'" icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editPermission(slotProps.data)" />
-                            <Button v-if="slotProps.data.status == 'approve'" icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" />
+                            <Button v-if="slotProps.data.status == 'approve'" icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" @click="generatePDF(slotProps.data)" />
                         </template>
                     </Column>
                 </DataTable>

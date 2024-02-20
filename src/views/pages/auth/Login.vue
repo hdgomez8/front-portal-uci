@@ -56,7 +56,7 @@ const handleLogin = async () => {
                         <InputText id="email1" type="text" placeholder="Dirección Correo Electrónico" class="w-full md:w-30rem mb-5" style="padding: 1rem" v-model="email" />
 
                         <label for="password1" class="block text-900 font-medium text-xl mb-2">Contraseña</label>
-                        <Password id="password1" v-model="password" placeholder="Ingresa Contraseña" :toggleMask="true" class="w-full mb-3" inputClass="w-full" :inputStyle="{ padding: '1rem' }"></Password>
+                        <Password id="password1" v-model="password" placeholder="Ingresa Contraseña" :appendSlot="null" :toggleMask="true" :feedbackMode="null"  class="w-full mb-3" inputClass="w-full" :inputStyle="{ padding: '1rem' }"></Password>
 
                         <div class="flex align-items-center justify-content-between mb-5 gap-5"></div>
                         <Button label="Iniciar Sesión" class="w-full p-3 text-xl" @click="handleLogin"></Button>
