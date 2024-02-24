@@ -5,7 +5,6 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
-import { useStore } from '@/store';
 
 //Variables
 const toast = useToast();
@@ -31,6 +30,8 @@ const tiposDePermisos = ref([
     { value: 'ASUNTOS LABORALES', id: 6 }
 ]);
 const minDate = ref(new Date());
+const minTime = ref('00:01:00');
+const maxTime = ref('23:59:00');
 const soportesPresentados = ref([]);
 
 //Ciclos De Vida
@@ -128,9 +129,8 @@ const handleStatusChange = async (status) => {
 };
 
 const generatePDF = (permissions) => {
-    console.log(permissions);
     axios
-        .post('/requests/generatePDF', permissions, { responseType: 'blob' })
+        .get(`/requests/generatePDF/${permissions.id}`, { responseType: 'blob' })
         .then((response) => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
@@ -154,8 +154,7 @@ const savePermission = () => {
     data.append('time', convertTimeToSeconds(permission.value.time));
     data.append('long', permission.value.long);
     data.append('observations', permission.value.observations);
-
-    if (soportesPresentados.value.length > 0) {
+    if (soportesPresentados.value.files.length > 0) {
         soportesPresentados.value.files.forEach((file) => {
             data.append('files[]', file);
         });
@@ -222,20 +221,20 @@ const initFilters = () => {
 };
 
 const formatDate = (dateString) => {
-    // Crea un objeto Date a partir de la cadena de fecha
-    const dateObject = new Date(dateString);
+    // Divide la cadena de fecha en componentes
+    const [year, month, day] = dateString.split('-').map((num) => parseInt(num, 10));
 
-    // Obtiene el día, mes y año
-    const day = dateObject.getDate();
-    const month = dateObject.getMonth() + 1; // ¡Recuerda sumar 1 al mes!
-    const year = dateObject.getFullYear();
+    // Crea un objeto Date usando el constructor con año, mes (ajustado -1) y día
+    // Esto asegura que se interprete en la zona horaria local
+    const dateObject = new Date(year, month - 1, day);
 
-    // Formatea los valores para asegurar que tengan dos dígitos
-    const formattedDay = day.toString().padStart(2, '0');
-    const formattedMonth = month.toString().padStart(2, '0');
+    // Obtiene el día, mes y año ya ajustados a la zona horaria local
+    const formattedDay = dateObject.getDate().toString().padStart(2, '0');
+    const formattedMonth = (dateObject.getMonth() + 1).toString().padStart(2, '0'); // Ajusta el mes
+    const formattedYear = dateObject.getFullYear();
 
     // Devuelve la fecha formateada
-    return `${formattedDay}/${formattedMonth}/${year}`;
+    return `${formattedDay}/${formattedMonth}/${formattedYear}`;
 };
 
 const formatHour = (timeString) => {
@@ -311,8 +310,8 @@ const acceptPermission = async (id) => {
                         <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
                             <h5 class="m-0">Permisos</h5>
                             <span class="block mt-2 md:mt-0 p-input-icon-left">
-                                <i class="pi pi-search" />
-                                <InputText v-model="filters['global'].value" placeholder="Buscar..." />
+                                <!-- <i class="pi pi-search" /> -->
+                                <!-- <InputText v-model="filters['global'].value" placeholder="Buscar..." /> -->
                             </span>
                         </div>
                     </template>
@@ -338,7 +337,11 @@ const acceptPermission = async (id) => {
                     <Column field="Status" header="Estado De Solicitud" :sortable="true" headerStyle="width:14%; min-width:10rem;">
                         <template #body="slotProps">
                             <span class="p-column-title">Estado De Solicitud</span>
-                            <span :class="'permission-badge status-' + (slotProps.data.status ? slotProps.data.status.toLowerCase() : '')">{{ slotProps.data.status === 'open' ? 'ABIERTO' : slotProps.data.status.toUpperCase() }}</span>
+                            <span :class="'permission-badge status-' + (slotProps.data.status ? slotProps.data.status.toLowerCase() : '')"
+                                ><i v-if="slotProps.data.status === 'open'" class="pi pi-circle-on" style="color: #17a2b8; margin-right: 4px"></i>
+                                <i v-else-if="slotProps.data.status === 'approve'" class="pi pi-check-circle" style="color: #28a745; margin-right: 4px"></i>
+                                <i v-else class="pi pi-times-circle" style="color: #dc3545; margin-right: 4px"></i>{{ slotProps.data.status === 'open' ? 'ABIERTO' : slotProps.data.status === 'approve' ? 'APROBADO' : 'RECHAZADO' }}
+                            </span>
                         </template>
                     </Column>
                     <Column field="type" header="Tipo Permiso" :sortable="true" headerStyle="width:14%; min-width:10rem;">
@@ -386,7 +389,7 @@ const acceptPermission = async (id) => {
                         </div>
                         <div class="field col-2">
                             <label for="horaPermiso">Hora Permiso:</label>
-                            <InputText id="horaPermiso" v-model="permission.time" type="time" required />
+                            <InputText id="horaPermiso" v-model="permission.time" type="time" :min="minTime" :max="maxTime" required />
                         </div>
                         <div class="field col-4">
                             <label for="duracionPermiso">Duración Del Permiso(Horas):</label>
@@ -419,7 +422,14 @@ const acceptPermission = async (id) => {
                         <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="handleStatusChange('rejected')" />
                         <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="handleStatusChange('approve')" />
                         <Button v-if="permission.boton == 'editar'" label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
-                        <Button v-if="permission.boton == 'nuevo'" label="Solicitar" icon="pi pi-arrow-right" class="p-button-text" @click="savePermission" />
+                        <Button
+                            v-if="permission.boton == 'nuevo'"
+                            :disabled="!permission.fechaPermiso || !permission.long || permission.time === '00:00:00' || permission.tipoPermiso.id === null"
+                            label="Solicitar"
+                            icon="pi pi-arrow-right"
+                            class="p-button-text"
+                            @click="savePermission"
+                        />
                     </template>
                 </Dialog>
 

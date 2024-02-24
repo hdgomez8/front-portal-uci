@@ -6,11 +6,13 @@ import axios from 'axios';
 
 const email = ref('');
 const password = ref('');
+const isLoading = ref(false);
 
 const router = useRouter();
 const store = useStore(); // Accede al store Pinia
 
 const handleLogin = async () => {
+    isLoading.value = true;
     try {
         const response = await axios.post('/login', {
             email: email.value,
@@ -37,6 +39,8 @@ const handleLogin = async () => {
         }
     } catch (error) {
         console.error('Error al iniciar sesión:', error);
+    } finally {
+        isLoading.value = false; // Establece isLoading a false después de finalizar el inicio de sesión
     }
 };
 </script>
@@ -56,7 +60,7 @@ const handleLogin = async () => {
                         <InputText id="email1" type="text" placeholder="Dirección Correo Electrónico" class="w-full md:w-30rem mb-5" style="padding: 1rem" v-model="email" />
 
                         <label for="password1" class="block text-900 font-medium text-xl mb-2">Contraseña</label>
-                        <Password id="password1" v-model="password" placeholder="Ingresa Contraseña" :appendSlot="null" :toggleMask="true" :feedbackMode="null"  class="w-full mb-3" inputClass="w-full" :inputStyle="{ padding: '1rem' }"></Password>
+                        <Password id="password1" v-model="password" placeholder="Ingresa Contraseña" :appendSlot="null" :toggleMask="true" :feedbackMode="null" class="w-full mb-3" inputClass="w-full" :inputStyle="{ padding: '1rem' }"></Password>
 
                         <div class="flex align-items-center justify-content-between mb-5 gap-5"></div>
                         <Button label="Iniciar Sesión" class="w-full p-3 text-xl" @click="handleLogin"></Button>
@@ -64,10 +68,40 @@ const handleLogin = async () => {
                 </div>
             </div>
         </div>
+        <!-- Indicador de carga -->
+        <div v-if="isLoading" class="loading-overlay">
+            <div class="loading-spinner">
+                <Spinner color="white" class="w-10 h-10"></Spinner>
+            </div>
+        </div>
     </div>
 </template>
 
 <style scoped>
+
+/* Overlay que cubre toda la pantalla */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Asegura que esté por encima de todo */
+}
+/* Estilo del indicador de carga */
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(0, 0, 0, 0.7); /* Fondo del spinner */
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .pi-eye {
     transform: scale(1.6);
     margin-right: 1rem;

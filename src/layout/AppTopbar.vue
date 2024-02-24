@@ -12,6 +12,8 @@
     const router = useRouter();
     const toast = useToast();
     const confirmPopup = useConfirm();
+    const usuarioJSON = localStorage.getItem('user');
+    const usuario = JSON.parse(usuarioJSON);
 
     onMounted(() => {
         bindOutsideClickListener();
@@ -99,8 +101,9 @@
             <button class="p-link layout-topbar-menu-button layout-topbar-button" @click="onTopBarMenuButton()">
                 <i class="pi pi-ellipsis-v"></i>
             </button>
-
-            <div class="layout-topbar-menu" :class="topbarMenuClasses">
+            
+            <div class="layout-topbar-menu" :class="topbarMenuClasses" style="display: flex; align-items: center;">
+                <div class="mr-3">{{usuario.first_name}} {{usuario.last_name}}</div>
                 <ConfirmPopup></ConfirmPopup>
                 <Toast />
                 <Button ref="popup" @click="confirm($event)" icon="pi pi-user" class="mr-2"></Button>
