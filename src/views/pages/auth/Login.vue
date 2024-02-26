@@ -71,32 +71,31 @@ const handleLogin = async () => {
         <!-- Indicador de carga -->
         <div v-if="isLoading" class="loading-overlay">
             <div class="loading-spinner">
-                <Spinner color="white" class="w-10 h-10"></Spinner>
+                <img src="/layout/images/Carga.gif" alt="Cargando..." class="w-10 h-10" />
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-
 /* Overlay que cubre toda la pantalla */
 .loading-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999; /* Asegura que esté por encima de todo */
+  background-color: rgba(100, 200, 150, 0.5); /* Verde pastel */
+  z-index: 9999;
 }
-/* Estilo del indicador de carga */
+
 .loading-spinner {
-  width: 50px;
-  height: 50px;
-  background-color: rgba(0, 0, 0, 0.7); /* Fondo del spinner */
+  width: 300px;
+  height: 300px;
+  background-color: rgba(100, 200, 150, 0.7); /* Verde pastel */
   border-radius: 50%;
   display: flex;
   justify-content: center;

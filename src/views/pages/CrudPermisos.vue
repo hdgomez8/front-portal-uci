@@ -14,6 +14,7 @@ const deletePermissionDialog = ref(false);
 const deletePermissionsDialog = ref(false);
 const usuarioJSON = localStorage.getItem('user');
 const usuario = JSON.parse(usuarioJSON);
+const isLoading = ref(false);
 
 const permission = ref({});
 const selectedPermissions = ref(null);
@@ -129,6 +130,7 @@ const handleStatusChange = async (status) => {
 };
 
 const generatePDF = (permissions) => {
+    isLoading.value = true;
     axios
         .get(`/requests/generatePDF/${permissions.id}`, { responseType: 'blob' })
         .then((response) => {
@@ -140,6 +142,7 @@ const generatePDF = (permissions) => {
             link.click();
             window.URL.revokeObjectURL(url);
             console.log('PDF generado correctamente');
+            isLoading.value = false;
         })
         .catch((error) => {
             // Manejar errores
@@ -358,50 +361,54 @@ const acceptPermission = async (id) => {
                     </Column>
                 </DataTable>
 
-                <Dialog v-model:visible="permissionDialog" :style="{ width: '1100px' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
-                    <div class="formgrid grid">
-                        <div class="field col-4">
+                <Dialog v-model:visible="permissionDialog" style="width: auto" :style="{ maxWidth: '1100px', width: '90%' }" header="Solicitud De Permiso" :modal="true" class="p-fluid">
+                    <!-- Datos del Empleado -->
+                    <div class="formgrid grid" style="display: flex; justify-content: space-between">
+                        <div class="field col-lg-4 col-md-12">
                             <label for="nombreEmpleado">Nombre Empleado</label>
                             <InputText id="nombreEmpleado" :showIcon="true" :showButtonBar="true" v-model="permission.employeeFullName" readonly disabled />
                         </div>
-                        <div class="field col-3">
+                        <div class="field col-lg-3 col-md-12">
                             <label for="cargo">Cargo</label>
                             <InputText id="cargo" :showIcon="true" :showButtonBar="true" v-model="permission.employee.title" readonly disabled />
                         </div>
-                        <div class="field col-2">
+                        <div class="field col-lg-2 col-md-12">
                             <label for="area">Area</label>
                             <InputText id="area" :showIcon="true" :showButtonBar="true" v-model="permission.employee.department[0].name" :value="permission.employee.department[0].name.toUpperCase()" readonly disabled />
                         </div>
-                        <div class="field col-3">
+                        <div class="field col-lg-3 col-md-12">
                             <label for="jefeInmediato">Jefe Inmediato</label>
                             <InputText id="jefeInmediato" :showIcon="true" :showButtonBar="true" v-model="permission.jefeInmediato" readonly disabled />
                         </div>
                     </div>
 
-                    <div class="formgrid grid">
-                        <div class="field col-3">
+                    <!-- Fechas y Horas -->
+                    <div class="formgrid grid" style="display: flex; justify-content: space-between">
+                        <div class="field col-lg-3 col-md-12">
                             <label for="fechaSolicitud">Fecha Solicitud</label>
                             <Calendar id="fechaSolicitud" :showIcon="true" :showButtonBar="true" v-model="permission.fechaSolicitud" dateFormat="dd/mm/yy" readonly disabled></Calendar>
                         </div>
-                        <div class="field col-3">
+                        <div class="field col-lg-3 col-md-12">
                             <label for="fechaPermiso">Fecha Permiso</label>
                             <Calendar id="fechaPermiso" :showIcon="true" :minDate="minDate" :showButtonBar="true" v-model="permission.fechaPermiso" dateFormat="dd/mm/yy" required></Calendar>
                         </div>
-                        <div class="field col-2">
+                        <div class="field col-lg-2 col-md-12">
                             <label for="horaPermiso">Hora Permiso:</label>
                             <InputText id="horaPermiso" v-model="permission.time" type="time" :min="minTime" :max="maxTime" required />
                         </div>
-                        <div class="field col-4">
+                        <div class="field col-lg-4 col-md-12">
                             <label for="duracionPermiso">Duración Del Permiso(Horas):</label>
                             <InputNumber id="duracionPermiso" v-model="permission.long" showButtons :min="1" mode="decimal" required></InputNumber>
                         </div>
                     </div>
 
+                    <!-- Tipo de Permiso -->
                     <div class="field">
                         <label for="tipoPermiso" class="mb-3">Tipo De Permiso</label>
                         <Dropdown required id="tipoPermiso" v-model="permission.tipoPermiso.id" :options="tiposDePermisos" optionLabel="value" placeholder="Selecciona Tipo De Permiso" optionValue="id"> </Dropdown>
                     </div>
 
+                    <!-- Soportes Presentados -->
                     <div class="field">
                         <h5>Soportes Presentados</h5>
                         <FileUpload v-model="permission.medias" name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*,.pdf" :maxFileSize="1000000" customUpload chooseLabel="Seleccionar" uploadLabel="Subir" cancelLabel="Cancelar" />
@@ -412,11 +419,13 @@ const acceptPermission = async (id) => {
                         </ul>
                     </div>
 
+                    <!-- Observaciones -->
                     <div class="field">
                         <label for="observaciones">Observaciones</label>
                         <Textarea id="observaciones" v-model="permission.observations" required="true" rows="3" cols="20" />
                     </div>
 
+                    <!-- Botones del Footer -->
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
                         <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="handleStatusChange('rejected')" />
@@ -460,10 +469,38 @@ const acceptPermission = async (id) => {
             </div>
         </div>
     </div>
+    <!-- Indicador de carga -->
+    <div v-if="isLoading" class="loading-overlay">
+        <div class="loading-spinner">
+            <img src="/layout/images/Carga.gif" alt="Cargando..." class="w-10 h-10" />
+        </div>
+    </div>
 </template>
 
 <style scoped lang="scss">
 .file-upload-button::before {
     content: 'Seleccionar'; /* Cambia el texto aquí */
+}
+.loading-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(100, 200, 150, 0.5); /* Verde pastel */
+  z-index: 9999;
+}
+
+.loading-spinner {
+  width: 300px;
+  height: 300px;
+  background-color: rgba(100, 200, 150, 0.7); /* Verde pastel */
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

@@ -103,6 +103,9 @@ import VirtualScroller from 'primevue/virtualscroller';
 
 import BlockViewer from '@/components/BlockViewer.vue';
 
+import 'primevue/resources/primevue.min.css'; // Estilos básicos de PrimeVue
+import 'primeicons/primeicons.css'; // Iconos de PrimeIcons
+import 'primeflex/primeflex.css'; // Estilos de PrimeFlex
 import '@/assets/styles.scss';
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 const app = createApp(App);
