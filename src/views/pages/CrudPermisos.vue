@@ -152,6 +152,7 @@ const generatePDF = (permissions) => {
 };
 
 const savePermission = (permissions) => {
+    isLoading.value = true;
     const data = new FormData();
     data.append('request_type_id', permission.value.tipoPermiso.id);
     data.append('date', permission.value.fechaPermiso.toISOString().split('T')[0]);
@@ -173,6 +174,7 @@ const savePermission = (permissions) => {
         .then(() => {
             toast.add({ severity: 'success', summary: 'Successful', detail: 'Permiso Creado', life: 3000 });
             permissionDialog.value = false;
+            isLoading.value = false;
             window.location.reload();
         })
         .catch((error) => {
