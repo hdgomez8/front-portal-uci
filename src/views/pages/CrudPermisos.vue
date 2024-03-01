@@ -24,9 +24,9 @@ const submitted = ref(false);
 const tiposDePermisos = ref([
     { value: 'SELECCIONE', id: null },
     { value: 'CALAMIDAD DOMESTICA', id: 1 },
-    { value: 'LICENCIA NO REMUNERADA', id: 2 },
-    { value: 'LICENCIA REMUNERADA', id: 3 },
-    { value: 'CONSULTA MEDICA', id: 4 },
+    { value: 'CONSULTA MEDICA', id: 2 },
+    { value: 'LICENCIA NO REMUNERADA', id: 3 },
+    { value: 'LICENCIA REMUNERADA', id: 4 },
     { value: 'ASUNTO PERSONAL', id: 5 },
     { value: 'ASUNTOS LABORALES', id: 6 }
 ]);
@@ -150,7 +150,7 @@ const generatePDF = (permissions) => {
         });
 };
 
-const savePermission = () => {
+const savePermission = (permissions) => {
     const data = new FormData();
     data.append('request_type_id', permission.value.tipoPermiso.id);
     data.append('date', permission.value.fechaPermiso.toISOString().split('T')[0]);
@@ -178,6 +178,30 @@ const savePermission = () => {
             console.error('Error al crear permiso:', error);
             toast.add({ severity: 'error', summary: 'Error', detail: 'Error al crear permiso', life: 3000 });
         });
+};
+
+const updatePermission = async (permissions) => {
+    let updatedData = {};
+    updatedData.request_type_id = permissions.tipoPermiso.id;
+    if (permissions.fechaPermiso instanceof Date) {
+        updatedData.date = permissions.fechaPermiso.toISOString().split('T')[0];
+    } else {
+        const [day, month, year] = permissions.fechaPermiso.split('/');
+        const isoDate = `${year}-${month}-${day}`;
+        updatedData.date = isoDate;
+    }
+    updatedData.time = convertTimeToSeconds(permissions.time); // Asume que tienes esta función
+    updatedData.long = permissions.long;
+    updatedData.observations = permissions.observations;
+
+    try {
+        const response = await axios.put(`/requests/${permissions.id}`, { ...updatedData });
+        toast.add({ severity: 'success', summary: 'Actualización exitosa', detail: 'Permiso actualizado correctamente', life: 3000 });
+        permissionDialog.value = false;
+    } catch (error) {
+        console.error('Error al actualizar el permiso:', error);
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar el permiso', life: 3000 });
+    }
 };
 
 const editPermission = (editPermission) => {
@@ -256,31 +280,6 @@ const formatHour = (timeString) => {
     return `${formattedHours}:${formattedMinutes}`;
 };
 
-const acceptPermission = async (id) => {
-    try {
-        const response = await axios.get(`/requests/${id}`);
-        const { data } = response.data;
-        data.status = 'approve';
-
-        // Realizar la solicitud para actualizar la solicitud con el ID proporcionado y los datos actualizados
-        const updateResponse = await axios.put(`/requests/${id}`, data);
-
-        // Manejar la respuesta de la solicitud de actualización
-        if (updateResponse.status === 200) {
-            // Éxito: la solicitud se actualizó correctamente
-            console.log('Solicitud aceptada correctamente');
-            toast.add({ severity: 'success', summary: 'Éxito', detail: 'Solicitud aceptada correctamente', life: 3000 });
-        } else {
-            // Error: la solicitud no se actualizó correctamente
-            console.error('Error al aceptar la solicitud:', updateResponse.statusText);
-            toast.add({ severity: 'error', summary: 'Error', detail: 'Error al aceptar la solicitud', life: 3000 });
-        }
-    } catch (error) {
-        // Capturar y manejar errores de la solicitud
-        console.error('Error al actualizar la solicitud:', error);
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar la solicitud', life: 3000 });
-    }
-};
 </script>
 
 <template>
@@ -430,7 +429,7 @@ const acceptPermission = async (id) => {
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
                         <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="handleStatusChange('rejected')" />
                         <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="handleStatusChange('approve')" />
-                        <Button v-if="permission.boton == 'editar'" label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
+                        <Button v-if="permission.boton == 'editar'" label="editar" icon="pi pi-pencil" class="p-button-text" @click="updatePermission(permission)" />
                         <Button
                             v-if="permission.boton == 'nuevo'"
                             :disabled="!permission.fechaPermiso || !permission.long || permission.time === '00:00:00' || permission.tipoPermiso.id === null"
@@ -482,25 +481,25 @@ const acceptPermission = async (id) => {
     content: 'Seleccionar'; /* Cambia el texto aquí */
 }
 .loading-overlay {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(100, 200, 150, 0.5); /* Verde pastel */
-  z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(100, 200, 150, 0.5); /* Verde pastel */
+    z-index: 9999;
 }
 
 .loading-spinner {
-  width: 300px;
-  height: 300px;
-  background-color: rgba(100, 200, 150, 0.7); /* Verde pastel */
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    width: 300px;
+    height: 300px;
+    background-color: rgba(100, 200, 150, 0.7); /* Verde pastel */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 </style>
