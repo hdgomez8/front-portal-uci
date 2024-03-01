@@ -6,6 +6,7 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
+import {StatusEnum} from '../../Enums/status-enum';
 //Variables
 const toast = useToast();
 const permissions = ref(null);
@@ -104,7 +105,7 @@ const openNew = () => {
         observations: '',
         boton: 'nuevo'
     };
-    console.log('usuario value', permission.value);
+   
     submitted.value = false;
 
     permissionDialog.value = true;
@@ -119,11 +120,11 @@ const handleStatusChange = async (status) => {
     permission.value.status = status;
     permission.value.time = convertTimeToSeconds(permission.value.time);
     const response = await axios.put(`/requests/${permission.value.id}`, { ...permission.value });
-    const statusValue = status === 'approve' ? 'Aprobado' : 'Rechazado';
+    const statusValue = status === StatusEnum.APPROVED ? 'Aprobado' : 'Rechazado';
     if ((response.status = 200)) {
         toast.add({ severity: 'success', summary: 'Successful', detail: `Permiso ${statusValue}`, life: 3000 });
         permissionDialog.value = false;
-        window.location.reload();
+       // window.location.reload();
     } else {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al crear permiso', life: 3000 });
     }
@@ -199,7 +200,7 @@ const editPermission = (editPermission) => {
         boton: 'editar',
         role: `${user.manager.role}`
     };
-    console.log('permiso editar', permission.value.time);
+
     permissionDialog.value = true;
 };
 
@@ -256,31 +257,7 @@ const formatHour = (timeString) => {
     return `${formattedHours}:${formattedMinutes}`;
 };
 
-const acceptPermission = async (id) => {
-    try {
-        const response = await axios.get(`/requests/${id}`);
-        const { data } = response.data;
-        data.status = 'approve';
 
-        // Realizar la solicitud para actualizar la solicitud con el ID proporcionado y los datos actualizados
-        const updateResponse = await axios.put(`/requests/${id}`, data);
-
-        // Manejar la respuesta de la solicitud de actualización
-        if (updateResponse.status === 200) {
-            // Éxito: la solicitud se actualizó correctamente
-            console.log('Solicitud aceptada correctamente');
-            toast.add({ severity: 'success', summary: 'Éxito', detail: 'Solicitud aceptada correctamente', life: 3000 });
-        } else {
-            // Error: la solicitud no se actualizó correctamente
-            console.error('Error al aceptar la solicitud:', updateResponse.statusText);
-            toast.add({ severity: 'error', summary: 'Error', detail: 'Error al aceptar la solicitud', life: 3000 });
-        }
-    } catch (error) {
-        // Capturar y manejar errores de la solicitud
-        console.error('Error al actualizar la solicitud:', error);
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar la solicitud', life: 3000 });
-    }
-};
 </script>
 
 <template>
@@ -342,8 +319,8 @@ const acceptPermission = async (id) => {
                             <span class="p-column-title">Estado De Solicitud</span>
                             <span :class="'permission-badge status-' + (slotProps.data.status ? slotProps.data.status.toLowerCase() : '')"
                                 ><i v-if="slotProps.data.status === 'open'" class="pi pi-circle-on" style="color: #17a2b8; margin-right: 4px"></i>
-                                <i v-else-if="slotProps.data.status === 'approve'" class="pi pi-check-circle" style="color: #28a745; margin-right: 4px"></i>
-                                <i v-else class="pi pi-times-circle" style="color: #dc3545; margin-right: 4px"></i>{{ slotProps.data.status === 'open' ? 'ABIERTO' : slotProps.data.status === 'approve' ? 'APROBADO' : 'RECHAZADO' }}
+                                <i v-else-if="slotProps.data.status === StatusEnum.APPROVED" class="pi pi-check-circle" style="color: #28a745; margin-right: 4px"></i>
+                                <i v-else class="pi pi-times-circle" style="color: #dc3545; margin-right: 4px"></i>{{ slotProps.data.status === 'open' ? 'ABIERTO' : slotProps.data.status === StatusEnum.APPROVED ? 'APROBADO' : 'RECHAZADO' }}
                             </span>
                         </template>
                     </Column>
@@ -356,7 +333,7 @@ const acceptPermission = async (id) => {
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
                             <Button v-if="slotProps.data.status == 'open'" icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editPermission(slotProps.data)" />
-                            <Button v-if="slotProps.data.status == 'approve'" icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" @click="generatePDF(slotProps.data)" />
+                            <Button v-if="slotProps.data.status == StatusEnum.APPROVED" icon="pi pi-file-pdf" class="p-button-rounded p-button-danger mr-2" @click="generatePDF(slotProps.data)" />
                         </template>
                     </Column>
                 </DataTable>
@@ -428,8 +405,8 @@ const acceptPermission = async (id) => {
                     <!-- Botones del Footer -->
                     <template #footer>
                         <Button label="Cancelar" icon="pi pi-replay" class="p-button-text" @click="hideDialog" />
-                        <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="handleStatusChange('rejected')" />
-                        <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="handleStatusChange('approve')" />
+                        <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="rechazar" icon="pi pi-thumbs-down" class="p-button-text" @click="handleStatusChange(StatusEnum.REJECTED)" />
+                        <Button v-if="usuario.department[0].pivot.role !== 'staff'" label="aceptar" icon="pi pi-thumbs-up" class="p-button-text" @click="handleStatusChange(StatusEnum.APPROVED)" />
                         <Button v-if="permission.boton == 'editar'" label="editar" icon="pi pi-pencil" class="p-button-text" @click="savePermission" />
                         <Button
                             v-if="permission.boton == 'nuevo'"
