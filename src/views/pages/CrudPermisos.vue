@@ -201,6 +201,7 @@ const updatePermission = async (permissions) => {
         const response = await axios.put(`/requests/${permissions.id}`, { ...updatedData });
         toast.add({ severity: 'success', summary: 'Actualización exitosa', detail: 'Permiso actualizado correctamente', life: 3000 });
         permissionDialog.value = false;
+        window.location.reload();
     } catch (error) {
         console.error('Error al actualizar el permiso:', error);
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar el permiso', life: 3000 });
