@@ -14,22 +14,26 @@ const model = ref([
             {
                 label: 'Permisos',
                 icon: 'pi pi-fw pi-pencil',
-                to: '/pages/crudPermisos'
+                to: '/pages/crudPermisos',
+
             },
             {
                 label: 'Vacaciones',
                 icon: 'pi pi-fw pi-car',
-                to: '/pages/crudVacaciones'
+                to: '/pages/crudVacaciones',
+                visible: false
             },
             {
                 label: 'Turnos',
                 icon: 'pi pi-fw pi-users',
-                to: '/pages/crudTurnos'
+                to: '/pages/crudTurnos',
+                visible: false
             },
             {
                 label: 'Cesantias',
                 icon: 'pi pi-fw pi-money-bill',
-                to: '/pages/crudCesantias'
+                to: '/pages/crudCesantias',
+                visible: false
             }
         ]
     }

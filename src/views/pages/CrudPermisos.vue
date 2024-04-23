@@ -6,7 +6,7 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
-import {StatusEnum} from '../../Enums/status-enum';
+import { StatusEnum } from '../../Enums/status-enum';
 //Variables
 const toast = useToast();
 const permissions = ref(null);
@@ -103,9 +103,10 @@ const openNew = () => {
         time: '00:00:00',
         long: null,
         observations: '',
+        reason: '',
         boton: 'nuevo'
     };
-   
+
     submitted.value = false;
 
     permissionDialog.value = true;
@@ -124,7 +125,7 @@ const handleStatusChange = async (status) => {
     if ((response.status = 200)) {
         toast.add({ severity: 'success', summary: 'Successful', detail: `Permiso ${statusValue}`, life: 3000 });
         permissionDialog.value = false;
-       // window.location.reload();
+        // window.location.reload();
     } else {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al crear permiso', life: 3000 });
     }
@@ -159,6 +160,7 @@ const savePermission = (permissions) => {
     data.append('time', convertTimeToSeconds(permission.value.time));
     data.append('long', permission.value.long);
     data.append('observations', permission.value.observations);
+    data.append('reason', permission.value.reason);
     if (soportesPresentados.value.files.length > 0) {
         soportesPresentados.value.files.forEach((file) => {
             data.append('files[]', file);
@@ -196,6 +198,7 @@ const updatePermission = async (permissions) => {
     updatedData.time = convertTimeToSeconds(permissions.time); // Asume que tienes esta función
     updatedData.long = permissions.long;
     updatedData.observations = permissions.observations;
+    updatedData.reason = permissions.reason;
 
     try {
         const response = await axios.put(`/requests/${permissions.id}`, { ...updatedData });
@@ -283,7 +286,6 @@ const formatHour = (timeString) => {
     // Devuelve la hora formateada
     return `${formattedHours}:${formattedMinutes}`;
 };
-
 </script>
 
 <template>
@@ -425,7 +427,13 @@ const formatHour = (timeString) => {
                     <!-- Observaciones -->
                     <div class="field">
                         <label for="observaciones">Observaciones</label>
-                        <Textarea id="observaciones" v-model="permission.observations" required="true" rows="3" cols="20" />
+                        <Textarea id="observaciones" v-model="permission.observations" required="true" rows="3" cols="20" :readonly="usuario.department[0].pivot.role !== 'staff'" />
+                    </div>
+
+                    <!-- Observaciones Jefe-->
+                    <div v-if="usuario.department[0].pivot.role !== 'staff'" class="field">
+                        <label for="reason">Observaciones Jefe</label>
+                        <Textarea id="reason" v-model="permission.reason" rows="3" cols="20" :readonly="usuario.department[0].pivot.role === 'staff'" />
                     </div>
 
                     <!-- Botones del Footer -->

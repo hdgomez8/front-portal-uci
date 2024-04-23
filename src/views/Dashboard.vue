@@ -180,7 +180,7 @@ watch(
             </div>
         </div>
     </div>
-    <div class="card">
+    <div class="card" style="display: none;">
         <h5>Vacaciones</h5>
         <div class="grid">
             <div class="col-12 lg:col-6 xl:col-3">
@@ -230,7 +230,7 @@ watch(
             </div>
         </div>
     </div>
-    <div class="card">
+    <div class="card" style="display: none;">
         <h5>Turnos</h5>
         <div class="grid">
             <div class="col-12 lg:col-6 xl:col-3">
@@ -280,7 +280,7 @@ watch(
             </div>
         </div>
     </div>
-    <div class="card">
+    <div class="card" style="display: none;">
         <h5>Cesantias</h5>
         <div class="grid">
             <div class="col-12 lg:col-6 xl:col-3">
