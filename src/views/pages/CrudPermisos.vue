@@ -161,12 +161,13 @@ const savePermission = (permissions) => {
     data.append('long', permission.value.long);
     data.append('observations', permission.value.observations);
     data.append('reason', permission.value.reason);
-    if (soportesPresentados.value.files.length > 0) {
+    if (soportesPresentados.value && soportesPresentados.value.files && soportesPresentados.value.files.length > 0) {
         soportesPresentados.value.files.forEach((file) => {
             data.append('files[]', file);
         });
     }
-
+    console.log(data);
+    debugger; 
     axios
         .post('/requests', data, {
             headers: {
