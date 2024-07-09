@@ -166,8 +166,7 @@ const savePermission = (permissions) => {
             data.append('files[]', file);
         });
     }
-    console.log(data);
-    debugger; 
+
     axios
         .post('/requests', data, {
             headers: {
