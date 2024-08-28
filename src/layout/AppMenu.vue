@@ -3,6 +3,14 @@ import { ref } from 'vue';
 
 import AppMenuItem from './AppMenuItem.vue';
 
+// Obtener el usuario desde localStorage
+const usuarioJSON = localStorage.getItem('user');
+const usuario = usuarioJSON ? JSON.parse(usuarioJSON) : null;
+const userId = usuario?.id || ''; // Asegúrate de que el ID del usuario esté disponible
+
+// Aquí puedes definir tu lógica para decidir si mostrar o no la opción de configuración
+const showConfig = usuario?.manager?.id === userId; // Por ejemplo, mostrar solo si el usuario es el manager
+
 const model = ref([
     {
         label: 'PORTAL UCI',
@@ -36,6 +44,17 @@ const model = ref([
                 visible: false
             }
         ]
+    },
+    {
+        label: 'Configuración',
+        items: [
+            {
+                label: 'Usuarios',
+                icon: 'pi pi-fw pi-user',
+                to: '/pages/configuraciones/crudUsuarios',
+                visible: showConfig // Mostrar solo si cumple con la lógica definida
+            }
+        ]
     }
 ]);
 </script>
@@ -43,7 +62,7 @@ const model = ref([
 <template>
     <ul class="layout-menu">
         <template v-for="(item, i) in model" :key="item">
-            <app-menu-item v-if="!item.separator" :item="item" :index="i"></app-menu-item>
+            <app-menu-item v-if="!item.separator && (item.visible !== false)" :item="item" :index="i"></app-menu-item>
             <li v-if="item.separator" class="menu-separator"></li>
         </template>
     </ul>
